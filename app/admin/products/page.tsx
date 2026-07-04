@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import DeleteProductButton from "@/components/DeleteProductButton";
 
 const PAGE_SIZE = 20;
@@ -23,7 +23,9 @@ export default async function AdminProductsPage({
     page?: string;
   }>;
 }) {
-  const { q, category,subcategory, sort, page } = await searchParams;
+  const supabase = await createClient();
+
+  const { q, category, subcategory, sort, page } = await searchParams;
 
   const currentPage = Math.max(1, Number(page) || 1);
   const from = (currentPage - 1) * PAGE_SIZE;
@@ -41,21 +43,20 @@ export default async function AdminProductsPage({
     .select("id, name")
     .order("name", { ascending: true });
 
-    const { data: subcategories } = await supabase
-  .from("subcategories")
-  .select("id, name, category_id")
-  .order("name");
+  const { data: subcategories } = await supabase
+    .from("subcategories")
+    .select("id, name, category_id")
+    .order("name");
 
   let query = supabase
     .from("products")
-
     .select(
-    `*, 
+      `*, 
     categories(id, name),
     subcategories(id, name)
     `,
-    { count: "exact" }
-  )
+      { count: "exact" }
+    )
     .order(sortKey, { ascending: sortKey !== "id" });
 
   if (q?.trim()) {
@@ -67,8 +68,8 @@ export default async function AdminProductsPage({
   }
 
   if (subcategory) {
-  query = query.eq("subcategory_id", Number(subcategory));
-}
+    query = query.eq("subcategory_id", Number(subcategory));
+  }
 
   query = query.range(from, to);
 
@@ -84,9 +85,8 @@ export default async function AdminProductsPage({
   // Helper to build a query string that preserves existing filters
   const buildHref = (overrides: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams();
-    const merged = { q, category, subcategory,sort: sortKey, page: currentPage, ...overrides };
-    if (merged.subcategory)
-params.set("subcategory", String(merged.subcategory));
+    const merged = { q, category, subcategory, sort: sortKey, page: currentPage, ...overrides };
+    if (merged.subcategory) params.set("subcategory", String(merged.subcategory));
 
     if (merged.q) params.set("q", String(merged.q));
     if (merged.category) params.set("category", String(merged.category));
@@ -142,8 +142,7 @@ params.set("subcategory", String(merged.subcategory));
 
           {subcategories
             ?.filter(
-              (sub) =>
-                !category || sub.category_id === Number(category)
+              (sub) => !category || sub.category_id === Number(category)
             )
             .map((sub) => (
               <option key={sub.id} value={sub.id}>
@@ -198,7 +197,6 @@ params.set("subcategory", String(merged.subcategory));
                 <th className="p-3 border">Model</th>
                 <th className="p-3 border">Category</th>
                 <th className="p-3 border">Subcategory</th>
-
                 <th className="p-3 border">Slug</th>
                 <th className="p-3 border">Actions</th>
               </tr>
@@ -229,17 +227,17 @@ params.set("subcategory", String(merged.subcategory));
                   <td className="border p-3">{product.model || "-"}</td>
                   <td className="border p-3">{product.categories?.name || "-"}</td>
                   <td className="border p-3">{product.subcategories?.name || "-"}</td>
-                 
+
                   <td className="border p-3 text-gray-500 text-sm">{product.slug}</td>
 
                   <td className="border p-3">
                     <div className="flex gap-4">
-
-                  <Link
-                    href={`/admin/products/${product.id}/edit?return=${encodeURIComponent(
-                      buildHref({})
-                    )}`}
-                    className="text-blue-600 font-semibold hover:underline">
+                      <Link
+                        href={`/admin/products/${product.id}/edit?return=${encodeURIComponent(
+                          buildHref({})
+                        )}`}
+                        className="text-blue-600 font-semibold hover:underline"
+                      >
                         Edit
                       </Link>
                       <DeleteProductButton id={product.id} />

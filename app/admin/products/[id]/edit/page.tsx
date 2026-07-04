@@ -1,12 +1,13 @@
 "use client";
   import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import { useParams, useRouter } from "next/navigation";
 
 export default function EditProductPage() {
   const { id } = useParams();
   const router = useRouter();
+  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
+  const supabase = await createClient();
+
   const { count: productCount } = await supabase
     .from("products")
     .select("*", { count: "exact", head: true });

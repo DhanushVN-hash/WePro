@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function DeleteProductButton({
@@ -9,6 +9,7 @@ export default function DeleteProductButton({
   id: number;
 }) {
   const router = useRouter();
+  const supabase = createClient();
 
   async function handleDelete() {
     const confirmDelete = window.confirm(

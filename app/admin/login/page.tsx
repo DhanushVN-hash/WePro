@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +18,7 @@ export default function LoginPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) router.replace("/admin/dashboard");
     });
-  }, [router]);
+  }, [router, supabase]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -38,6 +39,7 @@ export default function LoginPage() {
       }
 
       router.push("/admin/dashboard");
+      router.refresh(); // makes sure the server picks up the new session cookie
     } finally {
       setSubmitting(false);
     }
