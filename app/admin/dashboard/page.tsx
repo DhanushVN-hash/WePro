@@ -22,7 +22,7 @@ export default async function DashboardPage() {
       <div className="mt-8 flex gap-4">
         <Link
           href="/admin/products"
-          className="bg-yellow-500 hover:bg-yellow-600 px-5 py-3 rounded-lg font-semibold transition-colors"
+          className="bg-primary hover:bg-primary-hover px-5 py-3 rounded-lg font-semibold transition-colors"
         >
           Manage Products
         </Link>

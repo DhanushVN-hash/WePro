@@ -10,7 +10,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#1F1F1F] text-gray-300 mt-20">
       {/* Yellow Top Border */}
-      <div className="h-1 bg-yellow-500"></div>
+      <div className="h-1 bg-primary"></div>
 
       <div className="max-w-7xl mx-auto px-6 py-16 grid lg:grid-cols-4 md:grid-cols-2 gap-12">
 
@@ -107,7 +107,7 @@ export default function Footer() {
             <div className="flex items-start gap-3">
               <MapPin className="text-yellow-500 mt-1" size={18} />
               <span>
-                Chennai, Tamil Nadu,
+                No: 92 Yeshwanth Nagar Main Road Madambakkam chennai-600126,Tamil Nadu
                 India
               </span>
             </div>
@@ -119,21 +119,21 @@ export default function Footer() {
 
             <a
               href="#"
-              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-yellow-500 hover:text-black transition"
+              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-primary hover:text-black transition"
             >
               <FaFacebookF size={18} />
             </a>
 
             <a
               href="#"
-              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-yellow-500 hover:text-black transition"
+              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-primary hover:text-black transition"
             >
               <FaInstagram size={18} />
             </a>
 
             <a
               href="#"
-              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-yellow-500 hover:text-black transition"
+              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-primary hover:text-black transition"
             >
               <FaLinkedinIn size={18} />
             </a>

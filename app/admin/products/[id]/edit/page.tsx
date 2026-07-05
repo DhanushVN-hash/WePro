@@ -313,7 +313,7 @@ const returnUrl =
         <button
           type="submit"
           disabled={submitting}
-          className="bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded font-bold transition-colors"
+          className="bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded font-bold transition-colors"
         >
           {submitting ? "Updating..." : "Update Product"}
         </button>

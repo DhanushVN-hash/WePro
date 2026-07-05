@@ -104,7 +104,7 @@ export default async function AdminProductsPage({
 
         <Link
           href="/admin/products/new"
-          className="bg-yellow-500 hover:bg-yellow-600 px-5 py-3 rounded-lg font-semibold transition-colors"
+          className="bg-primary hover:bg-primary-600 px-5 py-3 rounded-lg font-semibold transition-colors"
         >
           + Add Product
         </Link>

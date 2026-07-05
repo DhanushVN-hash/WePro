@@ -147,6 +147,15 @@ export default function EnquiryForm({
       return;
     }
 
+
+      await fetch("/api/enquiry", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(form),
+    });
+
     alert("Enquiry sent successfully!");
 
     setForm(getInitialForm(defaultProduct));
@@ -181,7 +190,7 @@ export default function EnquiryForm({
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/30 lg:bg-gradient-to-r lg:from-black/85 lg:via-black/65 lg:to-black/25" />
 
           <div className="relative z-10 flex h-full flex-col justify-end px-6 py-8 text-white sm:px-10 lg:justify-center lg:px-16 lg:py-0">
-            <span className="mb-3 inline-flex w-fit items-center rounded-full bg-yellow-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-black">
+            <span className="mb-3 inline-flex w-fit items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold uppercase tracking-wide text-black">
               Get in touch
             </span>
 
@@ -305,7 +314,7 @@ export default function EnquiryForm({
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-500 px-6 py-3.5 font-semibold text-black transition-all hover:bg-yellow-600 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-semibold text-black transition-all hover:bg-primary-hover hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
               >
                 {loading ? "Sending..." : "Send Enquiry"}
                 {!loading && (

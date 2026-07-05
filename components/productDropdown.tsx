@@ -12,15 +12,16 @@ const items = [
 
 export default function ProductDropdown() {
   return (
-    <div className="absolute top-full left-0 mt-2 w-[360px] bg-[#6c6c6c] rounded-md shadow-2xl z-50">
+    <div className="mt-3 w-80 overflow-hidden rounded-xl border border-yellow-500/20 bg-secondary shadow-2xl">
+
       <ul className="py-2">
         {items.map((item) => (
           <li key={item.id}>
             <Link
               href={`/products?category=${item.id}`}
-              className="block w-full px-6 py-4 text-yellow-400 hover:bg-[#555]"
+              className="flex items-center justify-between px-6 py-4 text-gray-200 transition-all duration-200 hover:bg-primary hover:text-black hover:pl-8"
             >
-              {item.name}
+              <span>{item.name}</span>
             </Link>
           </li>
         ))}

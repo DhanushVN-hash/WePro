@@ -26,7 +26,7 @@ export default function Hero() {
         <div className="flex flex-wrap gap-4">
           <Link
             href="/products"
-            className="inline-flex items-center justify-center rounded-lg bg-yellow-500 px-6 py-3 font-semibold text-black transition hover:bg-yellow-400"
+            className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-black transition hover:bg-yellow-400"
           >
             View Products
           </Link>

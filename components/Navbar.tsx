@@ -8,8 +8,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);  //it is called as state
   return (
-    <header className="bg-[#101820] text-white sticky top-0 z-50">
-      <div className="bg-yellow-500 text-black text-center py-2 font-semibold">
+    <header className="bg-secondary text-white sticky top-0 z-50">
+      <div className="bg-primary text-black text-center py-2 font-semibold">
         Trusted Industrial Fastening Solutions Since 1996
       </div>
 
@@ -24,21 +24,20 @@ export default function Navbar() {
             <Link href="/">Home</Link>
           </li>
 
-          <li className="relative">
+        <li className="relative group">
 
-         <button
+          <button
             type="button"
-            onClick={() => setOpen((prev) => !prev)}
-          
+            className="flex items-center gap-2 hover:text-primary transition-colors"
           >
-              Products ▼
-            </button>
+            Products ▼
+          </button>
 
-            
+          <div className="absolute left-0 top-full hidden group-hover:block z-50">
+            <ProductDropdown />
+          </div>
 
-          {open && <ProductDropdown />}
-
-          </li>
+        </li>
 
           <li>
             <Link href="/">About</Link>
@@ -59,14 +58,14 @@ export default function Navbar() {
 
         <Link
          href="/#enquiry"
-         className="hidden md:block bg-yellow-500 text-black px-5 py-2 rounded-lg font-semibold"
+         className="hidden md:block bg-primary text-black px-5 py-2 rounded-lg font-semibold"
          >
           Get Quote
         </Link>
 
 
       {mobileOpen && (
-  <div className="md:hidden bg-[#101820] border-t border-gray-700">
+  <div className="md:hidden bg-secondary border-t border-gray-700">
     <ul className="flex flex-col p-4 space-y-4">
 
       <li>

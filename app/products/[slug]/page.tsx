@@ -131,7 +131,7 @@ const hasSpecifications =
           )}
 
           <a href="#enquiry-form" className="mt-8 sm:mt-10 w-full sm:w-auto">
-            <button className="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-black font-bold px-8 py-4 rounded-lg transition-colors shadow-sm">
+            <button className="w-full sm:w-auto bg-primary hover:bg-primary-hover active:bg-yellow-700 text-black font-bold px-8 py-4 rounded-lg transition-colors shadow-sm">
               Enquire Now
             </button>
           </a>
