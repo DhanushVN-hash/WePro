@@ -15,11 +15,11 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           sender: {
             name: "WE PRO Industrial Products",
-            email: "weproindustrialproducts@gmail.com",
+            email: "weproindustrial@gmail.com",
           },
           to: [
             {
-              email: "weproindustrialproducts@gmail.com",
+              email: "weproindustrial@gmail.com",
             },
           ],
           subject: `New Enquiry - ${product}`,
