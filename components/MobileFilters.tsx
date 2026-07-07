@@ -28,7 +28,7 @@ export default function MobileFilters({
         }
         className="w-full border rounded-lg p-3"
       >
-        <option value={3}>Pneumatic Nailers</option>
+        <option value={3}>Pneumatic Nailers and staplers</option>
         <option value={4}>Fasteners</option>
         <option value={5}>Spray Guns</option>
         <option value={6}>Pneumatic Tools</option>

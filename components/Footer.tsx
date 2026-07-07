@@ -51,19 +51,19 @@ export default function Footer() {
             </li>
 
             <li>
-              <Link href="/about" className="hover:text-yellow-500 transition">
+              <Link href="/#" className="hover:text-yellow-500 transition">
                 About Us
               </Link>
             </li>
 
             <li>
-              <Link href="/contact" className="hover:text-yellow-500 transition">
+              <Link href="/#enquiry" className="hover:text-yellow-500 transition">
                 Contact
               </Link>
             </li>
 
             <li>
-              <Link href="/gallery" className="hover:text-yellow-500 transition">
+              <Link href="/#" className="hover:text-yellow-500 transition">
                 Gallery
               </Link>
             </li>
@@ -77,10 +77,10 @@ export default function Footer() {
           </h3>
 
           <ul className="space-y-3">
-            <li>Air Nailers</li>
-            <li>Staplers</li>
+            <li>Penumetic stapler and nailer</li>
+            <li>spray guns</li>
             <li>Fasteners</li>
-            <li>Compressors</li>
+            <li>pneumatic tools</li>
             <li>Accessories</li>
           </ul>
         </div>
