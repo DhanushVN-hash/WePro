@@ -79,14 +79,14 @@ export default function ProductCarousel({
       <button
         onClick={scrollPrev}
         aria-label="Previous products"
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow transition-colors"
+        className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow transition-colors items-center justify-center"
       >
         <ChevronLeft className="text-[#101820]" />
       </button>
       <button
         onClick={scrollNext}
         aria-label="Next products"
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow transition-colors"
+        className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow transition-colors items-center justify-center"
       >
         <ChevronRight className="text-[#101820]" />
       </button>

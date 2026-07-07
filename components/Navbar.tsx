@@ -84,7 +84,7 @@ export default function Navbar() {
       </li>
 
       <li>
-        <Link href="/about" onClick={() => setMobileOpen(false)}>
+        <Link href="/#" onClick={() => setMobileOpen(false)}>
           About
         </Link>
       </li>
