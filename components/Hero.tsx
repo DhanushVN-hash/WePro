@@ -1,19 +1,21 @@
+import Image from "next/image";
 import Link from "next/link";
 import EnquiryForm from "@/components/enquiryForm";
 export default function Hero() {
   return (
-    <section
-      className="relative h-screen flex items-center"
-      style={{
-        backgroundImage:
-          "url('https://res.cloudinary.com/dthrkeu9m/image/upload/f_auto,q_auto/c2f06e95-954d-4bc1-bc28-2b04fd030fbf_fivcac')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="absolute inset-0 bg-black/60" />
+<section className="relative h-screen flex items-center overflow-hidden">
+  <Image
+    src="https://res.cloudinary.com/dthrkeu9m/image/upload/f_auto,q_auto,w_1920/c2f06e95-954d-4bc1-bc28-2b04fd030fbf_fivcac"
+    alt="Industrial Pneumatic Tools"
+    fill
+    priority
+    
+     className="object-cover pointer-events-none"
+  />
 
-      <div className="relative max-w-7xl mx-auto px-6 text-white">
+ <div className="absolute inset-0 bg-black/60 z-10 pointer-events-none" />
+
+      <div className="relative z-20 max-w-7xl mx-auto px-6 text-white">
         <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
           Industrial Pneumatic Tools
         </h1>
