@@ -105,7 +105,7 @@ export default function Footer() {
             </div>
 
             <div className="flex items-start gap-3">
-              <MapPin className="text-yellow-500 mt-1" size={18} />
+              <MapPin className="text-yellow-500 mt-1 shrink-0" />
               <span>
                 No: 92 Yeshwanth Nagar Main Road Madambakkam chennai-600126,Tamil Nadu
                 India
