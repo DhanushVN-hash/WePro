@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type Product = {
@@ -20,12 +21,15 @@ export default function ProductGrid({
           href={`/products/${product.slug}`}
           className="group block"
         >
-          <div className="aspect-square w-full bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center mb-4 transition group-hover:shadow-lg group-hover:scale-[1.02]">
+          <div className="relative aspect-square w-full bg-gray-50 rounded-lg overflow-hidden mb-4 transition duration-300 group-hover:shadow-lg group-hover:scale-[1.02]">
             {product.image_url ? (
-              <img
+              <Image
                 src={product.image_url}
                 alt={product.name}
-                className="h-full w-full object-contain p-2 md:p-4"
+                fill
+                loading="lazy"
+                sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 25vw"
+                className="object-contain p-2 md:p-4"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-gray-400">

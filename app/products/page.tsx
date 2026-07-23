@@ -1,4 +1,3 @@
-import Link from "next/link";
 import ProductGrid from "@/components/ProductGrid";
 import { supabase } from "@/lib/supabase";
 import ProductSidebar from "@/components/ProductSidebar";
@@ -16,24 +15,40 @@ export default async function ProductsPage({
 
   const categoryId = Number(category ?? 3);
 
-  // Current category
-  const { data: currentCategory } = await supabase
-    .from("categories")
-    .select("name")
-    .eq("id", categoryId)
-    .single();
+  // Fetch category & subcategories in parallel
+  const [categoryResult, subcategoriesResult] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("name")
+      .eq("id", categoryId)
+      .single(),
 
-  // Sidebar
-  const { data: subcategories } = await supabase
-    .from("subcategories")
-    .select("*")
-    .eq("category_id", categoryId)
-    .order("name");
+    supabase
+      .from("subcategories")
+      .select("id, name")
+      .eq("category_id", categoryId)
+      .order("name"),
+  ]);
 
-  // Products
+  const currentCategory = categoryResult.data;
+  const subcategories = subcategoriesResult.data;
+
+  // Products query
   let query = supabase
     .from("products")
-    .select(`*, subcategories(name)`, { count: "exact" })
+    .select(
+      `
+      id,
+      name,
+      slug,
+      model,
+      image_url,
+      category_id,
+      subcategory_id,
+      subcategories(name)
+      `,
+      { count: "exact" }
+    )
     .eq("category_id", categoryId)
     .order("id");
 
@@ -54,8 +69,7 @@ export default async function ProductsPage({
         {count ?? 0} Products
       </p>
 
-
-
+      {/* Mobile Filters */}
       <MobileFilters
         categoryId={categoryId}
         subcategory={subcategory}
@@ -64,15 +78,15 @@ export default async function ProductsPage({
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar */}
-      <div className="hidden lg:block">
-        <ProductSidebar
-          categoryId={categoryId}
-          subcategory={subcategory}
-          subcategories={subcategories ?? []}
-        />
-      </div>
+        <div className="hidden lg:block">
+          <ProductSidebar
+            categoryId={categoryId}
+            subcategory={subcategory}
+            subcategories={subcategories ?? []}
+          />
+        </div>
 
-      {/* products  */}
+        {/* Products */}
         <div className="flex-1">
           <ProductGrid products={products ?? []} />
         </div>
