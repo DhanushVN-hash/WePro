@@ -1,19 +1,22 @@
-import Navbar from "@/components/Navbar";
+import dynamic from "next/dynamic";
 import Hero from "@/components/Hero";
-import Products from "@/components/Products";
-import Footer from "@/components/Footer";
-import EnquiryForm from "@/components/enquiryForm";
-import ProductsOverview from "@/components/productsOverview";
 
+const Products = dynamic(() => import("@/components/Products"));
+const ProductsOverview = dynamic(() => import("@/components/productsOverview"));
+const EnquiryForm = dynamic(() => import("@/components/enquiryForm"));
+const Footer = dynamic(() => import("@/components/Footer"));
 
 export default function Home() {
   return (
     <>
-      
       <Hero />
+
       <Products />
-      <ProductsOverview/>
+
+      <ProductsOverview />
+
       <EnquiryForm showImage={true} />
+
       <Footer />
     </>
   );

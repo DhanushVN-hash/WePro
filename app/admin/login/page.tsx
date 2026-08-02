@@ -79,7 +79,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 p-3 rounded font-bold transition-colors"
+          className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 p-3 rounded font-bold transition-colors"
         >
           {submitting ? "Logging in..." : "Login"}
         </button>

@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import ProductSidebar from "@/components/ProductSidebar";
 import MobileFilters from "@/components/MobileFilters";
 
+
 export default async function ProductsPage({
   searchParams,
 }: {
@@ -34,10 +35,12 @@ export default async function ProductsPage({
   const subcategories = subcategoriesResult.data;
 
   // Products query
-  let query = supabase
-    .from("products")
-    .select(
-      `
+const PAGE_SIZE = 12;
+
+let query = supabase
+  .from("products")
+  .select(
+    `
       id,
       name,
       slug,
@@ -46,17 +49,18 @@ export default async function ProductsPage({
       category_id,
       subcategory_id,
       subcategories(name)
-      `,
-      { count: "exact" }
-    )
-    .eq("category_id", categoryId)
-    .order("id");
+    `,
+    { count: "exact" }
+  )
+  .eq("category_id", categoryId);
 
-  if (subcategory) {
-    query = query.eq("subcategory_id", Number(subcategory));
-  }
+if (subcategory) {
+  query = query.eq("subcategory_id", Number(subcategory));
+}
 
-  const { data: products, count } = await query;
+const { data: products, count } = await query
+  .order("id")
+  .range(0, PAGE_SIZE - 1);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
@@ -88,7 +92,12 @@ export default async function ProductsPage({
 
         {/* Products */}
         <div className="flex-1">
-          <ProductGrid products={products ?? []} />
+      <ProductGrid
+        initialProducts={products ?? []}
+        total={count ?? 0}
+        categoryId={categoryId}
+        subcategory={subcategory}
+      />
         </div>
       </div>
     </div>

@@ -28,12 +28,25 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { data: product } = await supabase
-    .from("products")
-    .select("name, description")
-    .eq("slug", slug)
-    .single();
-
+const { data: product, error } = await supabase
+  .from("products")
+  .select(`
+    id,
+    slug,
+    name,
+    model,
+    description,
+    image_url,
+    weight,
+    dimensions,
+    nail_compatibility,
+    capacity,
+    operating_pressure,
+    air_inlet,
+    customized_support
+  `)
+  .eq("slug", slug)
+  .single<Product>();
 
   
   if (!product) return {};
@@ -95,12 +108,15 @@ const hasSpecifications =
             <div className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-square">
               {product.image_url ? (
                 <Image
-                  src={product.image_url}
-                  alt={product.name}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
+                src={product.image_url}
+                alt={product.name}
+                fill
+                priority
+                quality={70}
+                sizes="(max-width:640px) 100vw,
+                        (max-width:1024px) 70vw,
+                        45vw"
+                className="object-contain"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-gray-400 text-sm">

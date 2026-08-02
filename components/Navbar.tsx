@@ -14,9 +14,9 @@ export default function Navbar() {
       </div>
 
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
-        <h1 className="text-4xl font-bold text-yellow-400">
-          WE PRO INDUSTRIAL PRODUCTS
-        </h1>
+        <h1 className="text-2xl md:text-4xl font-bold text-yellow-400">
+        WE PRO INDUSTRIAL PRODUCTS
+      </h1>
 
         <ul className="hidden md:flex gap-10 font-medium items-center">
 

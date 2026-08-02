@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
+export const revalidate = 3600;
+
 export default async function RelatedProducts({
   currentSlug,
 }: {
@@ -11,6 +13,7 @@ export default async function RelatedProducts({
     .from("products")
     .select("id, slug, name, image_url")
     .neq("slug", currentSlug)
+    .order("id")
     .limit(4);
 
   if (!products?.length) return null;
@@ -22,33 +25,41 @@ export default async function RelatedProducts({
       </h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <Link
-            key={product.id}
-            href={`/products/${product.slug}`}
-            className="border rounded-lg overflow-hidden hover:shadow-lg transition"
-          >
-            <div className="relative w-full h-52 bg-white">
-              {product.image_url?.trim() ? (
-                <Image
-                  src={product.image_url}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-gray-400">
-                  No Image
-                </div>
-              )}
-            </div>
+        {products.map((product) => {
+         const imageUrl = product.image_url;
 
-            <div className="p-4">
-              <h3 className="font-semibold">{product.name}</h3>
-            </div>
-          </Link>
-        ))}
+          return (
+            <Link
+              key={product.id}
+              href={`/products/${product.slug}`}
+              className="group border rounded-lg overflow-hidden hover:shadow-lg transition"
+            >
+              <div className="relative w-full h-52 bg-white">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={product.name}
+                    fill
+                    loading="lazy"
+                    quality={70}
+                    sizes="(max-width:768px) 50vw,25vw"
+                    className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4">
+                <h3 className="font-semibold text-[#101820] line-clamp-2">
+                  {product.name}
+                </h3>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

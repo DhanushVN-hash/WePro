@@ -1,16 +1,21 @@
 import { supabase } from "@/lib/supabase";
 import ProductCarousel from "@/components/ProductCarousel";
+import dynamic from "next/dynamic";
 
 export const revalidate = 3600;
 
 export default async function Products() {
-  const { data: products, error } = await supabase
-    .from("products")
-    .select("id, slug, name, image_url");
+const { data: products, error } = await supabase
+  .from("products")
+  .select("id, slug, name, image_url")
+  .order("id")
+  .limit(16);
 
   if (error) {
     console.error("Failed to load products:", error.message);
   }
+
+
 
   return (
     <section className="py-20">

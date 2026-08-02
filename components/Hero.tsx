@@ -3,24 +3,37 @@ import Link from "next/link";
 import EnquiryForm from "@/components/enquiryForm";
 export default function Hero() {
   return (
-<section className="relative h-screen flex items-center overflow-hidden">
+<section className="relative min-h-[75vh] md:h-screen flex items-center overflow-hidden">
+<div className="absolute inset-0">
+  {/* Desktop Image */}
   <Image
     src="https://res.cloudinary.com/dthrkeu9m/image/upload/f_auto,q_auto,w_1920/c2f06e95-954d-4bc1-bc28-2b04fd030fbf_fivcac"
     alt="Industrial Pneumatic Tools"
     fill
     priority
-    
-     className="object-cover pointer-events-none"
+    className="hidden md:block object-cover"
+    sizes="100vw"
   />
+
+  {/* Mobile Image */}
+  <Image
+    src="https://res.cloudinary.com/allujgvo/image/upload/v1785675096/ChatGPT_Image_Aug_2_2026_06_18_52_PM_lwjdgy.png"
+    alt="Industrial Pneumatic Tools"
+    fill
+    priority
+    className="block md:hidden object-cover"
+    sizes="100vw"
+  />
+</div>
 
  <div className="absolute inset-0 bg-black/60 z-10 pointer-events-none" />
 
       <div className="relative z-20 max-w-7xl mx-auto px-6 text-white">
-        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold leading-tight mb-5">
           Industrial Pneumatic Tools
         </h1>
 
-        <p className="text-lg md:text-xl text-gray-200 mb-8 max-w-2xl">
+        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8 max-w-2xl">
           Precision. Performance. Reliability. Premium pneumatic tools and
           fastening solutions for industrial and professional applications.
         </p>
