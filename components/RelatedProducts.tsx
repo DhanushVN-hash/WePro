@@ -41,7 +41,7 @@ export default async function RelatedProducts({
                     alt={product.name}
                     fill
                     loading="lazy"
-                    quality={70}
+                    quality={65}
                     sizes="(max-width:768px) 50vw,25vw"
                     className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
                   />

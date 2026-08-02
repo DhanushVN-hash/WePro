@@ -3,6 +3,11 @@ import { supabase } from "@/lib/supabase";
 import ProductSidebar from "@/components/ProductSidebar";
 import MobileFilters from "@/components/MobileFilters";
 
+// Cache this page for 60s so repeat visits don't re-hit Supabase every time.
+// Adjust or remove if your product data changes very frequently.
+export const revalidate = 60;
+
+const PAGE_SIZE = 12;
 
 export default async function ProductsPage({
   searchParams,
@@ -16,51 +21,49 @@ export default async function ProductsPage({
 
   const categoryId = Number(category ?? 3);
 
-  // Fetch category & subcategories in parallel
-  const [categoryResult, subcategoriesResult] = await Promise.all([
-    supabase
-      .from("categories")
-      .select("name")
-      .eq("id", categoryId)
-      .single(),
+  // Build the products query (not awaited yet)
+  let productsQuery = supabase
+    .from("products")
+    .select(
+      `
+        id,
+        name,
+        slug,
+        model,
+        image_url,
+        category_id,
+        subcategory_id,
+        subcategories(name)
+      `,
+      { count: "exact" }
+    )
+    .eq("category_id", categoryId);
 
-    supabase
-      .from("subcategories")
-      .select("id, name")
-      .eq("category_id", categoryId)
-      .order("name"),
-  ]);
+  if (subcategory) {
+    productsQuery = productsQuery.eq("subcategory_id", Number(subcategory));
+  }
+
+  // Fire ALL independent queries in parallel — category, subcategories, and products
+  const [categoryResult, subcategoriesResult, productsResult] =
+    await Promise.all([
+      supabase
+        .from("categories")
+        .select("name")
+        .eq("id", categoryId)
+        .single(),
+
+      supabase
+        .from("subcategories")
+        .select("id, name")
+        .eq("category_id", categoryId)
+        .order("name"),
+
+      productsQuery.order("id").range(0, PAGE_SIZE - 1),
+    ]);
 
   const currentCategory = categoryResult.data;
   const subcategories = subcategoriesResult.data;
-
-  // Products query
-const PAGE_SIZE = 12;
-
-let query = supabase
-  .from("products")
-  .select(
-    `
-      id,
-      name,
-      slug,
-      model,
-      image_url,
-      category_id,
-      subcategory_id,
-      subcategories(name)
-    `,
-    { count: "exact" }
-  )
-  .eq("category_id", categoryId);
-
-if (subcategory) {
-  query = query.eq("subcategory_id", Number(subcategory));
-}
-
-const { data: products, count } = await query
-  .order("id")
-  .range(0, PAGE_SIZE - 1);
+  const { data: products, count } = productsResult;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
@@ -92,12 +95,12 @@ const { data: products, count } = await query
 
         {/* Products */}
         <div className="flex-1">
-      <ProductGrid
-        initialProducts={products ?? []}
-        total={count ?? 0}
-        categoryId={categoryId}
-        subcategory={subcategory}
-      />
+          <ProductGrid
+            initialProducts={products ?? []}
+            total={count ?? 0}
+            categoryId={categoryId}
+            subcategory={subcategory}
+          />
         </div>
       </div>
     </div>

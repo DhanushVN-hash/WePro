@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import EnquiryForm from "@/components/enquiryForm";
 import RelatedProducts from "@/components/RelatedProducts";
+import { cache } from "react";
 
 interface Product {
   id: string;
@@ -22,31 +23,38 @@ interface Product {
 
 export const revalidate = 3600;
 
+const getProduct = cache(async (slug: string) => {
+  const { data, error } = await supabase
+    .from("products")
+    .select(`
+      id,
+      slug,
+      name,
+      model,
+      description,
+      image_url,
+      weight,
+      dimensions,
+      nail_compatibility,
+      capacity,
+      operating_pressure,
+      air_inlet,
+      customized_support
+    `)
+    .eq("slug", slug)
+    .single<Product>();
+
+  return { data, error };
+});
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-const { data: product, error } = await supabase
-  .from("products")
-  .select(`
-    id,
-    slug,
-    name,
-    model,
-    description,
-    image_url,
-    weight,
-    dimensions,
-    nail_compatibility,
-    capacity,
-    operating_pressure,
-    air_inlet,
-    customized_support
-  `)
-  .eq("slug", slug)
-  .single<Product>();
+
+const { data: product } = await getProduct(slug);
 
   
   if (!product) return {};
@@ -67,11 +75,7 @@ export default async function ProductDetails({
 }) {
   const { slug } = await params;
 
-  const { data: product, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("slug", slug)
-    .single<Product>();
+const { data: product, error } = await getProduct(slug);
 
   if (error || !product) {
     notFound();
@@ -112,7 +116,7 @@ const hasSpecifications =
                 alt={product.name}
                 fill
                 priority
-                quality={70}
+                quality={75}
                 sizes="(max-width:640px) 100vw,
                         (max-width:1024px) 70vw,
                         45vw"
