@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import ProductCarousel from "@/components/ProductCarousel";
 import dynamic from "next/dynamic";
+  
 
-export const revalidate = 3600;
 
 export default async function Products() {
 const { data: products, error } = await supabase

@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
-export const revalidate = 3600;
+
 
 export default async function RelatedProducts({
   currentSlug,

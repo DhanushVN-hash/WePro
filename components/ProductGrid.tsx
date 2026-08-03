@@ -96,7 +96,7 @@ export default function ProductGrid({
                     fill
                     priority={isAboveTheFold}
                     loading={isAboveTheFold ? undefined : "lazy"}
-                    quality={70}
+                    quality={75}
                     sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 25vw"
                     className="object-contain p-2 md:p-4"
                   />
