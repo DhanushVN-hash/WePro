@@ -4,18 +4,22 @@ import EnquiryForm from "@/components/enquiryForm"; // remove if truly unused el
 export default function Hero() {
   return (
     <section className="relative min-h-[75vh] md:h-screen flex items-center overflow-hidden">
-      <picture className="absolute inset-0 block w-full h-full">
-        <source
-          media="(min-width: 768px)"
-          srcSet="https://res.cloudinary.com/dthrkeu9m/image/upload/f_auto,q_auto,w_1920/c2f06e95-954d-4bc1-bc28-2b04fd030fbf_fivcac"
-        />
-        <img
-          src="https://res.cloudinary.com/allujgvo/image/upload/f_auto,q_auto,w_800/v1785675096/ChatGPT_Image_Aug_2_2026_06_18_52_PM_lwjdgy.png"
-          alt="Industrial Pneumatic Tools"
-          fetchPriority="high"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      </picture>
+          <picture className="absolute inset-0 block w-full h-full">
+            <source
+              media="(max-width: 767px)"
+              srcSet="https://res.cloudinary.com/allujgvo/image/upload/f_auto,q_auto,w_800/v1785675096/ChatGPT_Image_Aug_2_2026_06_18_52_PM_lwjdgy.png"
+            />
+
+            <img
+              src="https://res.cloudinary.com/dthrkeu9m/image/upload/f_auto,q_auto,w_1920/c2f06e95-954d-4bc1-bc28-2b04fd030fbf_fivcac"
+              alt="Industrial Pneumatic Tools"
+              width="1920"
+              height="1080"
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </picture>
 
       <div className="absolute inset-0 bg-black/60 z-10 pointer-events-none" />
 
