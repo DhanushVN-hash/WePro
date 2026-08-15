@@ -1,158 +1,252 @@
 import Link from "next/link";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, MapPin, ArrowRight } from "lucide-react";
 import {
   FaFacebookF,
   FaInstagram,
   FaLinkedinIn,
 } from "react-icons/fa";
 
+const categories = [
+  {
+    name: "Pneumatic Nailers & Staplers",
+    href: "/products?category=3",
+  },
+  {
+    name: "Fasteners",
+    href: "/products?category=4",
+  },
+  {
+    name: "Spray Guns",
+    href: "/products?category=5",
+  },
+  {
+    name: "Pneumatic Tools",
+    href: "/products?category=6",
+  },
+  {
+    name: "Accessories",
+    href: "/products?category=7",
+  },
+];
+
 export default function Footer() {
   return (
-    <footer className="bg-[#1F1F1F] text-gray-300 mt-20">
-      {/* Yellow Top Border */}
-      <div className="h-1 bg-primary"></div>
+    <footer className="bg-[#111111] text-gray-300">
 
-      <div className="max-w-7xl mx-auto px-6 py-16 grid lg:grid-cols-4 md:grid-cols-2 gap-12">
+      {/* Top accent */}
+      <div className="h-1 bg-primary" />
 
-        {/* Company */}
-        <div>
-          <h2 className="text-3xl font-extrabold text-white">
-            WE PRO
-          </h2>
+      {/* Main footer */}
+      <div className="max-w-7xl mx-auto px-6 py-16 lg:py-20">
 
-          <p className="text-yellow-500 font-semibold tracking-wide mt-1">
-            INDUSTRIAL PRODUCTS
-          </p>
+      
+        {/* Footer columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-10">
 
-          <p className="mt-5 leading-7 text-gray-400">
-            Authorized distributor of MEITE Pneumatic Tools,
-            Fasteners, Compressors and Industrial Accessories.
-            Delivering quality products across India.
-          </p>
-        </div>
+          {/* Company */}
+          <div>
+            <Link href="/" className="inline-block">
+              <h2 className="text-3xl font-extrabold text-white tracking-tight">
+                WE PRO
+              </h2>
 
-        {/* Quick Links */}
-        <div>
-          <h3 className="text-xl font-semibold text-white mb-5">
-            Quick Links
-          </h3>
+              <p className="text-primary font-semibold tracking-[0.15em] text-sm mt-1">
+                INDUSTRIAL PRODUCTS
+              </p>
+            </Link>
 
-          <ul className="space-y-3">
-            <li>
-              <Link href="/" className="hover:text-yellow-500 transition">
-                Home
-              </Link>
-            </li>
+            <p className="mt-6 leading-7 text-gray-400">
+              Authorized distributor of MEITE Pneumatic Tools,
+              Fasteners, Compressors and Industrial Accessories.
+              Delivering reliable industrial solutions across India.
+            </p>
 
-            <li>
-              <Link href="/products" className="hover:text-yellow-500 transition">
-                Products
-              </Link>
-            </li>
-
-            <li>
-              <Link href="/#" className="hover:text-yellow-500 transition">
-                About Us
-              </Link>
-            </li>
-
-            <li>
-              <Link href="/#enquiry" className="hover:text-yellow-500 transition">
-                Contact
-              </Link>
-            </li>
-
-            <li>
-              <Link href="/#" className="hover:text-yellow-500 transition">
-                Gallery
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Categories */}
-        <div>
-          <h3 className="text-xl font-semibold text-white mb-5">
-            Categories
-          </h3>
-
-          <ul className="space-y-3">
-            <li>Penumetic stapler and nailer</li>
-            <li>spray guns</li>
-            <li>Fasteners</li>
-            <li>pneumatic tools</li>
-            <li>Accessories</li>
-          </ul>
-        </div>
-
-        {/* Contact */}
-        <div>
-          <h3 className="text-xl font-semibold text-white mb-5">
-            Contact Us
-          </h3>
-
-          <div className="space-y-4">
-
-            <div className="flex items-start gap-3">
-              <Phone className="text-yellow-500 mt-1" size={18} />
-              <span>7338883738</span>
-              <span>9382888810</span>
+            <div className="mt-6 flex items-center gap-2 text-sm text-gray-500">
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              Trusted Industrial Solutions
             </div>
-
-            <div className="flex items-start gap-3">
-              <Mail className="text-yellow-500 mt-1" size={18} />
-              <span>weproindustrial@gmail.com</span>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <MapPin className="text-yellow-500 mt-1 shrink-0" />
-              <span>
-                No: 92 Yeshwanth Nagar Main Road Madambakkam chennai-600126,Tamil Nadu
-                India
-              </span>
-            </div>
-
           </div>
 
-          {/* Social Icons */}
-          <div className="flex gap-4 mt-8">
+          {/* Quick Links */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-6">
+              Quick Links
+            </h3>
 
-            <a
-              href="#"
-              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-primary hover:text-black transition"
-            >
-              <FaFacebookF size={18} />
-            </a>
+            <ul className="space-y-3.5">
+              <li>
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-primary transition-colors"
+                >
+                  Home
+                </Link>
+              </li>
 
-            <a
-              href="#"
-              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-primary hover:text-black transition"
-            >
-              <FaInstagram size={18} />
-            </a>
+              <li>
+                <Link
+                  href="/products"
+                  className="text-gray-400 hover:text-primary transition-colors"
+                >
+                  Products
+                </Link>
+              </li>
 
-            <a
-              href="#"
-              className="w-10 h-10 rounded-full bg-[#2D2D2D] flex items-center justify-center hover:bg-primary hover:text-black transition"
-            >
-              <FaLinkedinIn size={18} />
-            </a>
+              <li>
+                <Link
+                  href="/#enquiry"
+                  className="text-gray-400 hover:text-primary transition-colors"
+                >
+                  Contact Us
+                </Link>
+              </li>
 
+              <li>
+                <Link
+                  href="/#enquiry"
+                  className="text-gray-400 hover:text-primary transition-colors"
+                >
+                  Request a Quote
+                </Link>
+              </li>
+            </ul>
           </div>
 
+          {/* Categories */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-6">
+              Products
+            </h3>
+
+            <ul className="space-y-3.5">
+              {categories.map((category) => (
+                <li key={category.name}>
+                  <Link
+                    href={category.href}
+                    className="text-gray-400 hover:text-primary transition-colors"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-6">
+              Contact Us
+            </h3>
+
+            <div className="space-y-5">
+
+              {/* Phone */}
+              <div className="flex items-start gap-3">
+                <Phone
+                  className="text-primary mt-1 shrink-0"
+                  size={18}
+                />
+
+                <div className="flex flex-col gap-1">
+                  <a
+                    href="tel:+917338883738"
+                    className="hover:text-primary transition-colors"
+                  >
+                    +91 73388 83738
+                  </a>
+
+                  <a
+                    href="tel:+919382888810"
+                    className="hover:text-primary transition-colors"
+                  >
+                    +91 93828 88810
+                  </a>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="flex items-start gap-3">
+                <Mail
+                  className="text-primary mt-1 shrink-0"
+                  size={18}
+                />
+
+                <a
+                  href="mailto:weproindustrial@gmail.com"
+                  className="break-all hover:text-primary transition-colors"
+                >
+                  weproindustrial@gmail.com
+                </a>
+              </div>
+
+              {/* Address */}
+              <div className="flex items-start gap-3">
+                <MapPin
+                  className="text-primary mt-1 shrink-0"
+                  size={19}
+                />
+
+                <address className="not-italic leading-6 text-gray-400">
+                  No. 92, Yeshwanth Nagar Main Road,
+                  <br />
+                  Madambakkam,
+                  <br />
+                  Chennai – 600126,
+                  <br />
+                  Tamil Nadu, India
+                </address>
+              </div>
+
+            </div>
+
+            {/* Social */}
+            <div className="flex gap-3 mt-7">
+
+              <a
+                href="#"
+                aria-label="Facebook"
+                className="w-10 h-10 rounded-full bg-[#242424] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black transition-all duration-300 hover:-translate-y-1"
+              >
+                <FaFacebookF size={17} />
+              </a>
+
+              <a
+                href="#"
+                aria-label="Instagram"
+                className="w-10 h-10 rounded-full bg-[#242424] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black transition-all duration-300 hover:-translate-y-1"
+              >
+                <FaInstagram size={17} />
+              </a>
+
+              <a
+                href="#"
+                aria-label="LinkedIn"
+                className="w-10 h-10 rounded-full bg-[#242424] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black transition-all duration-300 hover:-translate-y-1"
+              >
+                <FaLinkedinIn size={17} />
+              </a>
+
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Bottom */}
-      <div className="border-t border-gray-700">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400">
+      {/* Bottom bar */}
+      <div className="border-t border-gray-800">
 
-          <p>
-            © {new Date().getFullYear()} WE PRO Industrial Products. All Rights Reserved.
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-sm text-gray-500">
+
+          <p className="text-center sm:text-left">
+            © {new Date().getFullYear()} WE PRO Industrial Products.
+            All Rights Reserved.
           </p>
 
+          <p>
+            Industrial Pneumatic Tools & Fastening Solutions
+          </p>
 
         </div>
+
       </div>
     </footer>
   );

@@ -18,6 +18,8 @@ export default function ProductSidebar({
 }: Props) {
   return (
     <aside className="w-60 flex-shrink-0 sticky top-28 self-start">
+  {subcategories.length > 0 && (
+    <>
       <h2 className="text-lg font-bold text-gray-900 mb-4 pb-3 border-b border-gray-200">
         Browse by
       </h2>
@@ -53,6 +55,8 @@ export default function ProductSidebar({
           ))}
         </ul>
       </nav>
-    </aside>
+    </>
+  )}
+</aside>
   );
 }
