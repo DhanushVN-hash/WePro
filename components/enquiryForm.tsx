@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Script from "next/script";
-import { supabase } from "@/lib/supabase";
 
 type FormData = {
   firstName: string;
@@ -12,7 +11,26 @@ type FormData = {
   phone: string;
   product: string;
   message: string;
+  termsAccepted: boolean;
 };
+
+const COUNTRY_CODES = [
+  "+91",
+  "+1",
+  "+44",
+  "+971",
+  "+65",
+  "+60",
+] as const;
+
+const MAX_LENGTHS = {
+  firstName: 50,
+  lastName: 50,
+  email: 254,
+  phone: 20,
+  product: 150,
+  message: 3000,
+} as const;
 
 const getInitialForm = (defaultProduct: string): FormData => ({
   firstName: "",
@@ -22,6 +40,7 @@ const getInitialForm = (defaultProduct: string): FormData => ({
   phone: "",
   product: defaultProduct,
   message: "",
+  termsAccepted: false,
 });
 
 type EnquiryFormProps = {
@@ -59,14 +78,24 @@ export default function EnquiryForm({
 
   const [loading, setLoading] = useState(false);
   const [captchaReady, setCaptchaReady] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   /*
-   * Detect when reCAPTCHA v3 is available.
+   * Keep the product synchronized if the parent changes
+   * the default product while this component is mounted.
+   */
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      product: defaultProduct,
+    }));
+  }, [defaultProduct]);
+
+  /*
+   * Detect when reCAPTCHA v3 has loaded.
    */
   useEffect(() => {
     if (!siteKey) return;
@@ -81,9 +110,23 @@ export default function EnquiryForm({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
+    const { name, value } = e.target;
+
     setForm((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
+    }));
+
+    setErrorMessage("");
+    setSuccessMessage("");
+  };
+
+  const handleTermsChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      termsAccepted: e.target.checked,
     }));
 
     setErrorMessage("");
@@ -91,73 +134,126 @@ export default function EnquiryForm({
   };
 
   /*
-   * Execute reCAPTCHA v3.
-   *
-   * v3 does NOT display a checkbox.
-   * Google generates a token when the user performs
-   * the protected action.
+   * Generate a reCAPTCHA v3 token only when submitting.
    */
   const getCaptchaToken = async (): Promise<string | null> => {
-    if (!siteKey) {
+    if (!siteKey || !window.grecaptcha) {
       return null;
     }
 
-    if (!window.grecaptcha) {
-      return null;
-    }
+    try {
+      return await new Promise<string | null>((resolve) => {
+        window.grecaptcha!.ready(async () => {
+          try {
+            const token = await window.grecaptcha!.execute(siteKey, {
+              action: "enquiry_submit",
+            });
 
-    return new Promise((resolve) => {
-      window.grecaptcha!.ready(async () => {
-        try {
-          const token = await window.grecaptcha!.execute(siteKey, {
-            action: "enquiry_submit",
-          });
-
-          resolve(token);
-        } catch (error) {
-          console.error("reCAPTCHA error:", error);
-          resolve(null);
-        }
+            resolve(token || null);
+          } catch (error) {
+            console.error("reCAPTCHA execution failed:", error);
+            resolve(null);
+          }
+        });
       });
-    });
+    } catch (error) {
+      console.error("reCAPTCHA error:", error);
+      return null;
+    }
   };
 
-  const validateForm = () => {
+  /*
+   * Client-side validation.
+   *
+   * IMPORTANT:
+   * This improves UX but is NOT a security boundary.
+   * The API must validate everything again.
+   */
+  const validateForm = (): boolean => {
     setErrorMessage("");
 
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
+    const email = form.email.trim().toLowerCase();
+    const product = form.product.trim();
+    const message = form.message.trim();
+    const phone = form.phone.trim();
+
     if (
-      !form.firstName.trim() ||
-      !form.lastName.trim() ||
-      !form.email.trim() ||
-      !form.phone.trim() ||
-      !form.product.trim() ||
-      !form.message.trim()
+      !firstName ||
+      !lastName ||
+      !email ||
+      !phone ||
+      !product ||
+      !message
     ) {
       setErrorMessage("Please fill all required fields.");
       return false;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.termsAccepted) {
+      setErrorMessage("Please accept the Terms & Conditions.");
+      return false;
+    }
 
-    if (!emailRegex.test(form.email.trim())) {
+    if (!COUNTRY_CODES.includes(form.countryCode as any)) {
+      setErrorMessage("Please select a valid country code.");
+      return false;
+    }
+
+    if (firstName.length > MAX_LENGTHS.firstName) {
+      setErrorMessage("First name is too long.");
+      return false;
+    }
+
+    if (lastName.length > MAX_LENGTHS.lastName) {
+      setErrorMessage("Last name is too long.");
+      return false;
+    }
+
+    if (email.length > MAX_LENGTHS.email) {
+      setErrorMessage("Email address is too long.");
+      return false;
+    }
+
+    if (product.length > MAX_LENGTHS.product) {
+      setErrorMessage("Product name is too long.");
+      return false;
+    }
+
+    if (message.length > MAX_LENGTHS.message) {
+      setErrorMessage("Enquiry message is too long.");
+      return false;
+    }
+
+    /*
+     * Practical email validation.
+     * The server must still validate the email.
+     */
+    const emailRegex =
+      /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i;
+
+    if (!emailRegex.test(email)) {
       setErrorMessage("Please enter a valid email address.");
       return false;
     }
 
-    const phoneDigits = form.phone.replace(/\D/g, "");
-
-    if (phoneDigits.length < 10) {
+    /*
+     * Keep phone input practical while allowing:
+     * spaces, +, -, brackets and dots.
+     */
+    if (!/^[0-9+\-().\s]+$/.test(phone)) {
       setErrorMessage("Please enter a valid phone number.");
       return false;
     }
 
-    const termsElement = document.getElementById("terms");
+    const phoneDigits = phone.replace(/\D/g, "");
 
     if (
-      !termsElement ||
-      termsElement.getAttribute("data-checked") !== "true"
+      phoneDigits.length < 7 ||
+      phoneDigits.length > 15
     ) {
-      setErrorMessage("Please accept the Terms & Conditions.");
+      setErrorMessage("Please enter a valid phone number.");
       return false;
     }
 
@@ -168,6 +264,13 @@ export default function EnquiryForm({
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
+
+    /*
+     * Prevent double submission.
+     */
+    if (loading) {
+      return;
+    }
 
     setErrorMessage("");
     setSuccessMessage("");
@@ -180,8 +283,7 @@ export default function EnquiryForm({
 
     try {
       /*
-       * Generate the reCAPTCHA v3 token only when
-       * the user submits the enquiry.
+       * Generate CAPTCHA immediately before the API request.
        */
       const captchaToken = await getCaptchaToken();
 
@@ -192,67 +294,69 @@ export default function EnquiryForm({
         return;
       }
 
-      const fullName =
-        `${form.firstName.trim()} ${form.lastName.trim()}`.trim();
+      const firstName = form.firstName.trim();
+      const lastName = form.lastName.trim();
+      const email = form.email.trim().toLowerCase();
+      const product = form.product.trim();
+      const message = form.message.trim();
+      const phone = form.phone.trim();
 
-      const fullPhone =
-        `${form.countryCode} ${form.phone.trim()}`.trim();
+      const fullName = `${firstName} ${lastName}`.trim();
 
-      /*
-       * Keep your existing Supabase database structure:
-       * name, email, phone, product, message
-       */
-      const { error } = await supabase
-        .from("enquiries")
-        .insert([
-          {
-            name: fullName,
-            email: form.email.trim(),
-            phone: fullPhone,
-            product: form.product.trim(),
-            message: form.message.trim(),
-          },
-        ]);
-
-      if (error) {
-        console.error("Supabase enquiry error:", error);
-
-        setErrorMessage(
-          "Unable to submit your enquiry. Please try again."
-        );
-
-        return;
-      }
+      const fullPhone = `${form.countryCode} ${phone}`.trim();
 
       /*
-       * Send notification through your API.
+       * IMPORTANT:
        *
-       * captchaToken is sent to the server so the server
-       * can verify it with Google.
+       * This component intentionally does NOT insert directly
+       * into Supabase.
+       *
+       * The server API should:
+       * 1. Validate the request
+       * 2. Verify reCAPTCHA
+       * 3. Apply rate limiting
+       * 4. Save the enquiry to Supabase
+       * 5. Send notification email
        */
       const response = await fetch("/api/enquiry", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify({
           name: fullName,
-          email: form.email.trim(),
+          firstName,
+          lastName,
+          email,
           phone: fullPhone,
-          product: form.product.trim(),
-          message: form.message.trim(),
+          countryCode: form.countryCode,
+          product,
+          message,
+          termsAccepted: form.termsAccepted,
           captchaToken,
         }),
       });
 
-      const result = await response.json();
+      /*
+       * Don't assume the API always returns valid JSON.
+       */
+      let result: {
+        success?: boolean;
+        error?: string;
+      } = {};
+
+      try {
+        result = await response.json();
+      } catch {
+        result = {};
+      }
 
       if (!response.ok) {
         setErrorMessage(
           result.error ||
-            "Unable to send your enquiry. Please try again."
+            "Unable to submit your enquiry. Please try again."
         );
-
         return;
       }
 
@@ -261,15 +365,8 @@ export default function EnquiryForm({
       );
 
       setForm(getInitialForm(defaultProduct));
-
-      const termsElement = document.getElementById("terms");
-
-      if (termsElement) {
-        (termsElement as HTMLInputElement).checked = false;
-        termsElement.setAttribute("data-checked", "false");
-      }
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Enquiry submission failed:", error);
 
       setErrorMessage(
         "Something went wrong. Please try again."
@@ -287,10 +384,18 @@ export default function EnquiryForm({
 
       {siteKey && (
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
+            siteKey
+          )}`}
           strategy="afterInteractive"
           onLoad={() => {
             setCaptchaReady(true);
+          }}
+          onError={() => {
+            setCaptchaReady(false);
+            setErrorMessage(
+              "Security verification could not be loaded. Please refresh the page and try again."
+            );
           }}
         />
       )}
@@ -298,6 +403,7 @@ export default function EnquiryForm({
       <section
         id="enquiry"
         className="bg-white"
+        aria-labelledby="enquiry-title"
       >
         <div
           className={
@@ -306,80 +412,33 @@ export default function EnquiryForm({
               : "block"
           }
         >
-
           {/* ==========================================
               IMAGE
               ========================================== */}
 
           {showImage && (
             <div className="relative hidden min-h-[650px] lg:block">
-
               <img
                 src={imageSrc}
                 alt="WE PRO Industrial Products"
-                className="
-                  absolute
-                  inset-0
-                  h-full
-                  w-full
-                  object-cover
-                "
+                className="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"
               />
 
-              <div
-                className="
-                  absolute
-                  inset-0
-                  bg-black/45
-                "
-              />
+              <div className="absolute inset-0 bg-black/45" />
 
-              <div
-                className="
-                  absolute
-                  bottom-0
-                  left-0
-                  right-0
-                  p-10
-                  text-white
-                "
-              >
+              <div className="absolute bottom-0 left-0 right-0 p-10 text-white">
+                <div className="mb-3 h-[3px] w-12 bg-yellow-400" />
 
-                <div
-                  className="
-                    mb-3
-                    h-[3px]
-                    w-12
-                    bg-yellow-400
-                  "
-                />
-
-                <p
-                  className="
-                    text-sm
-                    font-medium
-                    uppercase
-                    tracking-[0.12em]
-                    text-yellow-400
-                  "
-                >
+                <p className="text-sm font-medium uppercase tracking-[0.12em] text-yellow-400">
                   WE PRO Industrial Products
                 </p>
 
-                <h2
-                  className="
-                    mt-2
-                    max-w-md
-                    text-3xl
-                    font-bold
-                    leading-tight
-                  "
-                >
+                <h2 className="mt-2 max-w-md text-3xl font-bold leading-tight">
                   Industrial Products &
+                  <br />
                   Fastening Solutions
                 </h2>
-
               </div>
             </div>
           )}
@@ -397,23 +456,17 @@ export default function EnquiryForm({
               sm:py-14
               lg:px-14
               lg:py-16
-              ${
-                showImage
-                  ? ""
-                  : "mx-auto w-full max-w-4xl"
-              }
+              ${showImage ? "" : "mx-auto w-full max-w-4xl"}
             `}
           >
-
             <div className="mx-auto w-full max-w-2xl">
-
               {/* ======================================
                   HEADING
                   ====================================== */}
 
               <div className="mb-8">
-
                 <h2
+                  id="enquiry-title"
                   className="
                     text-3xl
                     font-bold
@@ -425,26 +478,11 @@ export default function EnquiryForm({
                   {title}
                 </h2>
 
-                <div
-                  className="
-                    mt-3
-                    h-[3px]
-                    w-14
-                    bg-primary
-                  "
-                />
+                <div className="mt-3 h-[3px] w-14 bg-primary" />
 
-                <p
-                  className="
-                    mt-3
-                    text-sm
-                    text-gray-600
-                    sm:text-base
-                  "
-                >
+                <p className="mt-3 text-sm text-gray-600 sm:text-base">
                   {subtitle}
                 </p>
-
               </div>
 
               {/* ======================================
@@ -454,6 +492,7 @@ export default function EnquiryForm({
               {errorMessage && (
                 <div
                   role="alert"
+                  aria-live="assertive"
                   className="
                     mb-5
                     border
@@ -476,6 +515,7 @@ export default function EnquiryForm({
               {successMessage && (
                 <div
                   role="status"
+                  aria-live="polite"
                   className="
                     mb-5
                     border
@@ -494,16 +534,14 @@ export default function EnquiryForm({
               <form
                 onSubmit={handleSubmit}
                 className="space-y-5"
+                noValidate
               >
-
                 {/* ======================================
                     FIRST NAME + LAST NAME
                     ====================================== */}
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
                   <div>
-
                     <label
                       htmlFor="firstName"
                       className="
@@ -525,6 +563,8 @@ export default function EnquiryForm({
                       onChange={handleChange}
                       placeholder="First Name"
                       required
+                      maxLength={MAX_LENGTHS.firstName}
+                      autoComplete="given-name"
                       disabled={loading}
                       className="
                         h-11
@@ -540,11 +580,9 @@ export default function EnquiryForm({
                         focus:border-gray-800
                       "
                     />
-
                   </div>
 
                   <div>
-
                     <label
                       htmlFor="lastName"
                       className="
@@ -566,6 +604,8 @@ export default function EnquiryForm({
                       onChange={handleChange}
                       placeholder="Last Name"
                       required
+                      maxLength={MAX_LENGTHS.lastName}
+                      autoComplete="family-name"
                       disabled={loading}
                       className="
                         h-11
@@ -581,9 +621,7 @@ export default function EnquiryForm({
                         focus:border-gray-800
                       "
                     />
-
                   </div>
-
                 </div>
 
                 {/* ======================================
@@ -591,7 +629,6 @@ export default function EnquiryForm({
                     ====================================== */}
 
                 <div>
-
                   <label
                     htmlFor="email"
                     className="
@@ -613,6 +650,9 @@ export default function EnquiryForm({
                     onChange={handleChange}
                     placeholder="Your Email"
                     required
+                    maxLength={MAX_LENGTHS.email}
+                    autoComplete="email"
+                    inputMode="email"
                     disabled={loading}
                     className="
                       h-11
@@ -628,7 +668,6 @@ export default function EnquiryForm({
                       focus:border-gray-800
                     "
                   />
-
                 </div>
 
                 {/* ======================================
@@ -636,7 +675,6 @@ export default function EnquiryForm({
                     ====================================== */}
 
                 <div>
-
                   <label
                     htmlFor="product"
                     className="
@@ -658,6 +696,7 @@ export default function EnquiryForm({
                     onChange={handleChange}
                     placeholder="Product name or model"
                     required
+                    maxLength={MAX_LENGTHS.product}
                     disabled={loading}
                     className="
                       h-11
@@ -673,7 +712,6 @@ export default function EnquiryForm({
                       focus:border-gray-800
                     "
                   />
-
                 </div>
 
                 {/* ======================================
@@ -689,9 +727,7 @@ export default function EnquiryForm({
                     sm:gap-5
                   "
                 >
-
                   <div>
-
                     <label
                       htmlFor="countryCode"
                       className="
@@ -711,6 +747,7 @@ export default function EnquiryForm({
                       value={form.countryCode}
                       onChange={handleChange}
                       disabled={loading}
+                      autoComplete="tel-country-code"
                       className="
                         h-11
                         w-full
@@ -724,35 +761,16 @@ export default function EnquiryForm({
                         focus:border-gray-800
                       "
                     >
-                      <option value="+91">
-                        IN +91
-                      </option>
-
-                      <option value="+1">
-                        US +1
-                      </option>
-
-                      <option value="+44">
-                        UK +44
-                      </option>
-
-                      <option value="+971">
-                        UAE +971
-                      </option>
-
-                      <option value="+65">
-                        SG +65
-                      </option>
-
-                      <option value="+60">
-                        MY +60
-                      </option>
+                      <option value="+91">IN +91</option>
+                      <option value="+1">US +1</option>
+                      <option value="+44">UK +44</option>
+                      <option value="+971">UAE +971</option>
+                      <option value="+65">SG +65</option>
+                      <option value="+60">MY +60</option>
                     </select>
-
                   </div>
 
                   <div>
-
                     <label
                       htmlFor="phone"
                       className="
@@ -763,7 +781,7 @@ export default function EnquiryForm({
                         text-gray-800
                       "
                     >
-                      Phone
+                      Phone *
                     </label>
 
                     <input
@@ -774,6 +792,9 @@ export default function EnquiryForm({
                       onChange={handleChange}
                       placeholder="Phone"
                       required
+                      maxLength={MAX_LENGTHS.phone}
+                      autoComplete="tel"
+                      inputMode="tel"
                       disabled={loading}
                       className="
                         h-11
@@ -789,9 +810,7 @@ export default function EnquiryForm({
                         focus:border-gray-800
                       "
                     />
-
                   </div>
-
                 </div>
 
                 {/* ======================================
@@ -799,7 +818,6 @@ export default function EnquiryForm({
                     ====================================== */}
 
                 <div>
-
                   <label
                     htmlFor="message"
                     className="
@@ -821,6 +839,7 @@ export default function EnquiryForm({
                     onChange={handleChange}
                     placeholder="Tell us what you are looking for..."
                     required
+                    maxLength={MAX_LENGTHS.message}
                     disabled={loading}
                     className="
                       w-full
@@ -838,20 +857,75 @@ export default function EnquiryForm({
                     "
                   />
 
+                  <p className="mt-1 text-right text-xs text-gray-400">
+                    {form.message.length}/{MAX_LENGTHS.message}
+                  </p>
                 </div>
 
                 {/* ======================================
                     TERMS
                     ====================================== */}
 
-                <TermsCheckbox />
+                <label
+                  htmlFor="terms"
+                  className="
+                    flex
+                    cursor-pointer
+                    items-start
+                    gap-3
+                    pt-1
+                    text-sm
+                    text-gray-700
+                  "
+                >
+                  <input
+                    id="terms"
+                    name="termsAccepted"
+                    type="checkbox"
+                    checked={form.termsAccepted}
+                    onChange={handleTermsChange}
+                    required
+                    disabled={loading}
+                    className="
+                      mt-0.5
+                      h-5
+                      w-5
+                      shrink-0
+                      cursor-pointer
+                      accent-yellow-400
+                    "
+                  />
+
+                  <span>
+                    I accept the{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="
+                        font-medium
+                        text-gray-900
+                        underline
+                        underline-offset-2
+                        hover:text-yellow-600
+                      "
+                    >
+                      Terms & Conditions
+                    </a>
+                  </span>
+                </label>
 
                 {/* ======================================
                     CAPTCHA STATUS
                     ====================================== */}
 
                 {siteKey && !captchaReady && (
-                  <p className="text-xs text-gray-500">
+                  <p
+                    className="text-xs text-gray-500"
+                    role="status"
+                    aria-live="polite"
+                  >
                     Security verification is loading...
                   </p>
                 )}
@@ -868,7 +942,7 @@ export default function EnquiryForm({
                       text-yellow-800
                     "
                   >
-                    reCAPTCHA site key is not configured.
+                    Security verification is not configured.
                   </div>
                 )}
 
@@ -901,94 +975,13 @@ export default function EnquiryForm({
                     disabled:opacity-50
                   "
                 >
-                  {loading
-                    ? "Submitting..."
-                    : "Submit"}
+                  {loading ? "Submitting..." : "Submit"}
                 </button>
-
               </form>
-
             </div>
           </div>
-
         </div>
       </section>
     </>
-  );
-}
-
-/*
- * Terms & Conditions checkbox
- */
-function TermsCheckbox() {
-  const [checked, setChecked] = useState(false);
-
-  return (
-    <label
-      htmlFor="terms"
-      className="
-        flex
-        cursor-pointer
-        items-start
-        gap-3
-        pt-1
-        text-sm
-        text-gray-700
-      "
-    >
-
-      <input
-        id="terms"
-        type="checkbox"
-        required
-        checked={checked}
-        onChange={(e) => {
-          const value = e.target.checked;
-
-          setChecked(value);
-
-          const element =
-            document.getElementById("terms");
-
-          if (element) {
-            element.setAttribute(
-              "data-checked",
-              String(value)
-            );
-          }
-        }}
-        className="
-          mt-0.5
-          h-5
-          w-5
-          shrink-0
-          cursor-pointer
-          accent-yellow-400
-        "
-      />
-
-      <span>
-
-        I accept the{" "}
-
-        <a
-          href="/terms"
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="
-            font-medium
-            text-gray-900
-            underline
-            underline-offset-2
-            hover:text-yellow-600
-          "
-        >
-          Terms & Conditions
-        </a>
-
-      </span>
-
-    </label>
   );
 }

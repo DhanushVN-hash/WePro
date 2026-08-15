@@ -1,7 +1,108 @@
 import { NextResponse } from "next/server";
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? "")
+export const runtime = "nodejs";
+
+const MAX_LENGTHS = {
+  name: 100,
+  firstName: 40,
+  lastName: 40,
+  email: 100,
+  phone: 10,
+  countryCode: 5,
+  product: 100,
+  message: 3000,
+} as const;
+
+const ALLOWED_COUNTRY_CODES = new Set([
+  "+91",
+  "+1",
+  "+44",
+  "+971",
+  "+65",
+  "+60",
+]);
+
+const CAPTCHA_ACTION = "enquiry_submit";
+
+/*
+ * Adjust this according to your reCAPTCHA v3 score data.
+ *
+ * 0.5 is a reasonable starting point.
+ * You can increase/decrease it later based on legitimate
+ * users being accepted or rejected.
+ */
+const CAPTCHA_MIN_SCORE = 0.5;
+
+/*
+ * Basic in-memory rate limiter.
+ *
+ * IMPORTANT:
+ * This works for a single server instance.
+ * On Vercel/serverless deployments it is only a lightweight
+ * additional protection, not a complete distributed rate limiter.
+ *
+ * For stronger production protection, use a persistent
+ * rate-limit service later.
+ */
+const rateLimitStore = new Map<
+  string,
+  { count: number; resetAt: number }
+>();
+
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
+function getClientIp(req: Request): string {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0].trim();
+  }
+
+  const realIp = req.headers.get("x-real-ip");
+
+  if (realIp) {
+    return realIp.trim();
+  }
+
+  return "unknown";
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const existing = rateLimitStore.get(ip);
+
+  if (!existing || now > existing.resetAt) {
+    rateLimitStore.set(ip, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW_MS,
+    });
+
+    return false;
+  }
+
+  existing.count += 1;
+
+  if (existing.count > RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+
+  return false;
+}
+
+function cleanText(
+  value: unknown,
+  maxLength: number
+): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+}
+
+function escapeHtml(value: string): string {
+  return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -9,70 +110,574 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#039;");
 }
 
-function cleanText(value: unknown, maxLength: number): string {
-  return String(value ?? "").trim().slice(0, maxLength);
-}
-
 function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (email.length > MAX_LENGTHS.email) {
+    return false;
+  }
+
+  return /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i.test(
+    email
+  );
 }
 
 function isValidPhone(phone: string): boolean {
-  return /^[0-9+\-\s()]{7,20}$/.test(phone);
+  if (
+    phone.length < 7 ||
+    phone.length > MAX_LENGTHS.phone
+  ) {
+    return false;
+  }
+
+  if (!/^[0-9+\-().\s]+$/.test(phone)) {
+    return false;
+  }
+
+  const digits = phone.replace(/\D/g, "");
+
+  return digits.length >= 7 && digits.length <= 15;
+}
+
+function isValidName(value: string): boolean {
+  if (!value || value.length > 100) {
+    return false;
+  }
+
+  /*
+   * Allow normal international names.
+   * This intentionally does not restrict names to A-Z only.
+   */
+  return /^[\p{L}\p{M}'’.\-\s]+$/u.test(value);
+}
+
+function isValidProduct(value: string): boolean {
+  return (
+    value.length > 0 &&
+    value.length <= MAX_LENGTHS.product
+  );
+}
+
+function isValidMessage(value: string): boolean {
+  return (
+    value.length > 0 &&
+    value.length <= MAX_LENGTHS.message
+  );
+}
+
+async function verifyRecaptcha(
+  token: string,
+  req: Request
+): Promise<boolean> {
+  const secretKey =
+    process.env.RECAPTCHA_SECRET_KEY;
+
+  if (!secretKey) {
+    console.error(
+      "RECAPTCHA_SECRET_KEY is missing"
+    );
+
+    return false;
+  }
+
+  try {
+    const formData = new URLSearchParams();
+
+    formData.append("secret", secretKey);
+    formData.append("response", token);
+
+    /*
+     * Google supports an optional remoteip parameter.
+     * We don't need to send it; the token itself is verified
+     * against the reCAPTCHA secret.
+     */
+    const response = await fetch(
+      "https://www.google.com/recaptcha/api/siteverify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "reCAPTCHA verification request failed:",
+        response.status
+      );
+
+      return false;
+    }
+
+    const result = (await response.json()) as {
+      success?: boolean;
+      score?: number;
+      action?: string;
+      hostname?: string;
+      "error-codes"?: string[];
+    };
+
+    if (!result.success) {
+      console.error(
+        "reCAPTCHA rejected:",
+        result["error-codes"] ?? []
+      );
+
+      return false;
+    }
+
+    /*
+     * Verify the exact action generated by the frontend.
+     * This prevents using a token generated for another action.
+     */
+    if (result.action !== CAPTCHA_ACTION) {
+      console.error(
+        "Invalid reCAPTCHA action:",
+        result.action
+      );
+
+      return false;
+    }
+
+    /*
+     * v3 returns a score from 0.0 to 1.0.
+     */
+    if (
+      typeof result.score !== "number" ||
+      result.score < CAPTCHA_MIN_SCORE
+    ) {
+      console.error(
+        "reCAPTCHA score too low:",
+        result.score
+      );
+
+      return false;
+    }
+
+    /*
+     * If you have configured a specific production domain,
+     * optionally verify the hostname here.
+     *
+     * We intentionally don't hard-code your domain because
+     * the code you provided does not establish the exact
+     * production hostname.
+     */
+    const expectedHostname =
+      process.env.RECAPTCHA_EXPECTED_HOSTNAME;
+
+    if (
+      expectedHostname &&
+      result.hostname !== expectedHostname
+    ) {
+      console.error(
+        "Invalid reCAPTCHA hostname:",
+        result.hostname
+      );
+
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "reCAPTCHA verification error:",
+      error
+    );
+
+    return false;
+  }
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    /*
+     * ------------------------------------------------------
+     * 1. Request size protection
+     * ------------------------------------------------------
+     */
+    const contentLength = req.headers.get(
+      "content-length"
+    );
 
-    const name = cleanText(body.name, 100);
-    const email = cleanText(body.email, 150);
-    const phone = cleanText(body.phone, 20);
-    const product = cleanText(body.product, 150);
-    const message = cleanText(body.message, 2000);
-
-    // Server-side required field validation
-    if (!name || !email || !phone || !product || !message) {
+    if (
+      contentLength &&
+      Number(contentLength) > 50_000
+    ) {
       return NextResponse.json(
-        { error: "Please fill in all required fields." },
+        {
+          error:
+            "Request is too large.",
+        },
+        { status: 413 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 2. Rate limiting
+     * ------------------------------------------------------
+     */
+    const ip = getClientIp(req);
+
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many enquiries. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": "600",
+          },
+        }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 3. Parse JSON
+     * ------------------------------------------------------
+     */
+    let body: Record<string, unknown>;
+
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Invalid request.",
+        },
         { status: 400 }
       );
     }
 
-    // Server-side email validation
+    if (
+      !body ||
+      typeof body !== "object" ||
+      Array.isArray(body)
+    ) {
+      return NextResponse.json(
+        {
+          error: "Invalid request.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 4. Read and normalize values
+     * ------------------------------------------------------
+     */
+    const firstName = cleanText(
+      body.firstName,
+      MAX_LENGTHS.firstName
+    );
+
+    const lastName = cleanText(
+      body.lastName,
+      MAX_LENGTHS.lastName
+    );
+
+    const suppliedName = cleanText(
+      body.name,
+      MAX_LENGTHS.name
+    );
+
+    const email = cleanText(
+      body.email,
+      MAX_LENGTHS.email
+    ).toLowerCase();
+
+    const phone = cleanText(
+      body.phone,
+      MAX_LENGTHS.phone
+    );
+
+    const countryCode = cleanText(
+      body.countryCode,
+      MAX_LENGTHS.countryCode
+    );
+
+    const product = cleanText(
+      body.product,
+      MAX_LENGTHS.product
+    );
+
+    const message = cleanText(
+      body.message,
+      MAX_LENGTHS.message
+    );
+
+    const captchaToken =
+      typeof body.captchaToken === "string"
+        ? body.captchaToken.trim()
+        : "";
+
+    const termsAccepted =
+      body.termsAccepted === true;
+
+    /*
+     * ------------------------------------------------------
+     * 5. Required fields
+     * ------------------------------------------------------
+     */
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !phone ||
+      !product ||
+      !message
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Please fill in all required fields.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 6. Length validation
+     * ------------------------------------------------------
+     *
+     * Unlike the old code, oversized values are rejected
+     * instead of silently truncated.
+     */
+    if (
+      firstName.length > MAX_LENGTHS.firstName ||
+      lastName.length > MAX_LENGTHS.lastName ||
+      email.length > MAX_LENGTHS.email ||
+      phone.length > MAX_LENGTHS.phone ||
+      product.length > MAX_LENGTHS.product ||
+      message.length > MAX_LENGTHS.message
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "One or more fields are too long.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 7. Name validation
+     * ------------------------------------------------------
+     */
+    if (
+      !isValidName(firstName) ||
+      !isValidName(lastName)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Please enter a valid name.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 8. Email validation
+     * ------------------------------------------------------
+     */
     if (!isValidEmail(email)) {
       return NextResponse.json(
-        { error: "Please enter a valid email address." },
+        {
+          error:
+            "Please enter a valid email address.",
+        },
         { status: 400 }
       );
     }
 
-    // Server-side phone validation
+    /*
+     * ------------------------------------------------------
+     * 9. Country code validation
+     * ------------------------------------------------------
+     */
+    if (!ALLOWED_COUNTRY_CODES.has(countryCode)) {
+      return NextResponse.json(
+        {
+          error:
+            "Please select a valid country code.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 10. Phone validation
+     * ------------------------------------------------------
+     */
     if (!isValidPhone(phone)) {
       return NextResponse.json(
-        { error: "Please enter a valid phone number." },
+        {
+          error:
+            "Please enter a valid phone number.",
+        },
         { status: 400 }
       );
     }
 
-    // Escape values before inserting them into HTML email
-    const safeName = escapeHtml(name);
-    const safeEmail = escapeHtml(email);
-    const safePhone = escapeHtml(phone);
-    const safeProduct = escapeHtml(product);
-    const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+    /*
+     * ------------------------------------------------------
+     * 11. Product validation
+     * ------------------------------------------------------
+     */
+    if (!isValidProduct(product)) {
+      return NextResponse.json(
+        {
+          error:
+            "Please enter a valid product.",
+        },
+        { status: 400 }
+      );
+    }
 
-    const brevoApiKey = process.env.BREVO_API_KEY;
+    /*
+     * ------------------------------------------------------
+     * 12. Message validation
+     * ------------------------------------------------------
+     */
+    if (!isValidMessage(message)) {
+      return NextResponse.json(
+        {
+          error:
+            "Please enter a valid enquiry message.",
+        },
+        { status: 400 }
+      );
+    }
 
-    if (!brevoApiKey) {
-      console.error("BREVO_API_KEY is missing");
+    /*
+     * ------------------------------------------------------
+     * 13. Terms & Conditions
+     * ------------------------------------------------------
+     */
+    if (!termsAccepted) {
+      return NextResponse.json(
+        {
+          error:
+            "Please accept the Terms & Conditions.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 14. CAPTCHA
+     * ------------------------------------------------------
+     */
+    const captchaSecret =
+      process.env.RECAPTCHA_SECRET_KEY;
+
+    if (!captchaSecret) {
+      console.error(
+        "RECAPTCHA_SECRET_KEY is missing"
+      );
 
       return NextResponse.json(
-        { error: "Email service is not configured." },
+        {
+          error:
+            "Security verification is not configured.",
+        },
         { status: 500 }
       );
     }
 
+    if (!captchaToken) {
+      return NextResponse.json(
+        {
+          error:
+            "Security verification failed. Please try again.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const captchaValid =
+      await verifyRecaptcha(
+        captchaToken,
+        req
+      );
+
+    if (!captchaValid) {
+      return NextResponse.json(
+        {
+          error:
+            "Security verification failed. Please try again.",
+        },
+        { status: 403 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 15. Brevo configuration
+     * ------------------------------------------------------
+     */
+    const brevoApiKey =
+      process.env.BREVO_API_KEY;
+
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL;
+
+    const recipientEmail =
+      process.env.BREVO_RECIPIENT_EMAIL;
+
+    if (
+      !brevoApiKey ||
+      !senderEmail ||
+      !recipientEmail
+    ) {
+      console.error(
+        "Brevo environment variables are missing."
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Email service is not configured.",
+        },
+        { status: 500 }
+      );
+    }
+
+    /*
+     * ------------------------------------------------------
+     * 16. Prepare safe HTML
+     * ------------------------------------------------------
+     */
+    const safeName = escapeHtml(
+      suppliedName ||
+        `${firstName} ${lastName}`.trim()
+    );
+
+    const safeEmail = escapeHtml(email);
+    const safePhone = escapeHtml(phone);
+    const safeProduct = escapeHtml(product);
+
+    const safeMessage = escapeHtml(
+      message
+    ).replace(/\r?\n/g, "<br>");
+
+    /*
+     * ------------------------------------------------------
+     * 17. Send Brevo email
+     * ------------------------------------------------------
+     */
     const response = await fetch(
       "https://api.brevo.com/v3/smtp/email",
       {
@@ -84,51 +689,116 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           sender: {
             name: "WE PRO Industrial Products",
-            email: "weproindustrial@gmail.com",
+            email: senderEmail,
           },
+
           to: [
             {
-              email: "weproindustrial@gmail.com",
+              email: recipientEmail,
             },
           ],
+
+          replyTo: {
+            email,
+            name: `${firstName} ${lastName}`.trim(),
+          },
+
           subject: `New Enquiry - ${safeProduct}`,
+
           htmlContent: `
             <h2>New Product Enquiry</h2>
 
-            <p><strong>Name:</strong> ${safeName}</p>
+            <p>
+              <strong>Name:</strong>
+              ${safeName}
+            </p>
 
-            <p><strong>Email:</strong> ${safeEmail}</p>
+            <p>
+              <strong>Email:</strong>
+              ${safeEmail}
+            </p>
 
-            <p><strong>Phone:</strong> ${safePhone}</p>
+            <p>
+              <strong>Phone:</strong>
+              ${safePhone}
+            </p>
 
-            <p><strong>Product:</strong> ${safeProduct}</p>
+            <p>
+              <strong>Product:</strong>
+              ${safeProduct}
+            </p>
 
-            <p><strong>Message:</strong></p>
+            <p>
+              <strong>Terms accepted:</strong>
+              Yes
+            </p>
 
-            <p>${safeMessage}</p>
+            <p>
+              <strong>Message:</strong>
+            </p>
+
+            <p>
+              ${safeMessage}
+            </p>
           `,
         }),
+        cache: "no-store",
       }
     );
 
+    /*
+     * ------------------------------------------------------
+     * 18. Brevo response
+     * ------------------------------------------------------
+     */
     if (!response.ok) {
-      const error = await response.text();
-      console.error("Brevo error:", error);
+      const errorText =
+        await response.text();
+
+      /*
+       * Don't expose Brevo's internal error
+       * details to the visitor.
+       */
+      console.error(
+        "Brevo request failed:",
+        response.status,
+        errorText
+      );
 
       return NextResponse.json(
-        { error: "Unable to send enquiry. Please try again." },
-        { status: 500 }
+        {
+          error:
+            "Unable to send enquiry. Please try again.",
+        },
+        { status: 502 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-    });
+    /*
+     * ------------------------------------------------------
+     * 19. Success
+     * ------------------------------------------------------
+     */
+    return NextResponse.json(
+      {
+        success: true,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error("Enquiry API error:", error);
+    /*
+     * Never expose internal server errors to the client.
+     */
+    console.error(
+      "Enquiry API error:",
+      error
+    );
 
     return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
+      {
+        error:
+          "Something went wrong. Please try again.",
+      },
       { status: 500 }
     );
   }
