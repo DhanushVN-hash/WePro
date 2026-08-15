@@ -267,21 +267,21 @@ export default function Navbar() {
     >
       {/* Announcement */}
       <div className="border-b border-white/10 bg-primary">
-        <div
-          className="
-            max-w-7xl mx-auto
-            px-4 sm:px-6
-            py-2
-            flex items-center justify-center
-            gap-2
-            text-[10px] sm:text-[11px] md:text-xs
-            font-medium
-            tracking-[0.12em]
-            uppercase
-            text-gray-300
-            text-center
-          "
-        >
+<div
+  className="
+    max-w-7xl mx-auto
+    px-4 sm:px-6
+    py-1.5
+    flex items-center justify-center
+    gap-2
+    text-[9px] sm:text-[10px] md:text-[11px]
+    font-medium
+    tracking-[0.12em]
+    uppercase
+    text-gray-300
+    text-center
+  "
+>
           <span className="h-1 w-1 rounded-full bg-gray-300 " />
 
           <span>
@@ -293,14 +293,15 @@ export default function Navbar() {
       </div>
 
       {/* Main Navbar */}
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6">
+            <nav className="max-w-6xl mx-auto px-4 sm:px-6">
+
         <div
-          className={`
-            flex items-center justify-between
-            gap-4
-            transition-[padding] duration-200
-            ${scrolled ? "py-2.5" : "py-4"}
-          `}
+        className={`
+          flex items-center justify-between
+          gap-5
+          transition-[padding] duration-200
+          ${scrolled ? "py-2" : "py-2.5"}
+        `}
         >
           {/* Logo */}
           <Link
@@ -339,7 +340,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <ul className="hidden lg:flex gap-7 font-medium items-center">
+          <ul className="hidden lg:flex gap-6 font-medium items-center">
             <li>
               <Link
                 href="/"
@@ -444,11 +445,11 @@ export default function Navbar() {
           <div
             ref={desktopSearchRef}
             className="
-              hidden md:block
-              relative
-              flex-1
-              max-w-md
-              z-[200]
+          hidden md:block
+          relative
+          w-[280px] lg:w-[320px]
+          shrink-0
+          z-[200]
             "
           >
             <div

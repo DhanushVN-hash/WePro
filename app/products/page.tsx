@@ -3,8 +3,6 @@ import { supabase } from "@/lib/supabase";
 import ProductSidebar from "@/components/ProductSidebar";
 import MobileFilters from "@/components/MobileFilters";
 
-// Cache this page for 60s so repeat visits don't re-hit Supabase every time.
-// Adjust or remove if your product data changes very frequently.
 export const revalidate = 60;
 
 const PAGE_SIZE = 12;
@@ -21,7 +19,6 @@ export default async function ProductsPage({
 
   const categoryId = Number(category ?? 3);
 
-  // Build the products query (not awaited yet)
   let productsQuery = supabase
     .from("products")
     .select(
@@ -43,14 +40,9 @@ export default async function ProductsPage({
     productsQuery = productsQuery.eq("subcategory_id", Number(subcategory));
   }
 
-  // Fire ALL independent queries in parallel — category, subcategories, and products
   const [categoryResult, subcategoriesResult, productsResult] =
     await Promise.all([
-      supabase
-        .from("categories")
-        .select("name")
-        .eq("id", categoryId)
-        .single(),
+      supabase.from("categories").select("name").eq("id", categoryId).single(),
 
       supabase
         .from("subcategories")
@@ -65,42 +57,77 @@ export default async function ProductsPage({
   const subcategories = subcategoriesResult.data;
   const { data: products, count } = productsResult;
 
+  // Resolve the active subcategory name for the breadcrumb, if any
+  const activeSubName = subcategory
+    ? subcategories?.find((s) => s.id === Number(subcategory))?.name
+    : undefined;
+
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
-      {/* Title */}
-      <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900">
-        {currentCategory?.name}
-      </h1>
+    <div className="bg-[#FAFAF8] min-h-screen">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        {/* Breadcrumb */}
+        <nav className="mb-5 font-mono text-[11px] uppercase tracking-[0.15em] text-gray-500">
+          <span>Home</span>
+          <span className="mx-2 text-gray-300">/</span>
+          <span className={activeSubName ? "" : "text-[#101820] font-semibold"}>
+            {currentCategory?.name}
+          </span>
+          {activeSubName && (
+            <>
+              <span className="mx-2 text-gray-300">/</span>
+              <span className="text-[#101820] font-semibold">{activeSubName}</span>
+            </>
+          )}
+        </nav>
 
-      <p className="mt-2 mb-10 text-amber-600 font-medium">
-        {count ?? 0} Products
-      </p>
+        {/* Title */}
+        <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-[0.95] text-[#101820]">
+          {currentCategory?.name}
+        </h1>
 
-      {/* Mobile Filters */}
-      <MobileFilters
-        categoryId={categoryId}
-        subcategory={subcategory}
-        subcategories={subcategories ?? []}
-      />
+        {/* Tick-rule divider */}
+        <div
+          className="mt-5 h-2 w-full max-w-xs"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, #101820 0px, #101820 1px, transparent 1px, transparent 7px)",
+          }}
+          aria-hidden="true"
+        />
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar */}
-        <div className="hidden lg:block">
-          <ProductSidebar
-            categoryId={categoryId}
-            subcategory={subcategory}
-            subcategories={subcategories ?? []}
-          />
+        {/* Spec-plate count badge */}
+        <div className="mt-5 mb-10">
+          <span className="inline-flex items-center gap-2  text-amber-400 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded-sm">
+            {count ?? 0} Products Listed
+          </span>
         </div>
 
-        {/* Products */}
-        <div className="flex-1">
-          <ProductGrid
-            initialProducts={products ?? []}
-            total={count ?? 0}
-            categoryId={categoryId}
-            subcategory={subcategory}
-          />
+        {/* Mobile Filters */}
+        <MobileFilters
+          categoryId={categoryId}
+          subcategory={subcategory}
+          subcategories={subcategories ?? []}
+        />
+
+        <div className="flex flex-col lg:flex-row gap-10">
+          {/* Sidebar */}
+          <div className="hidden lg:block">
+            <ProductSidebar
+              categoryId={categoryId}
+              subcategory={subcategory}
+              subcategories={subcategories ?? []}
+            />
+          </div>
+
+          {/* Products */}
+          <div className="flex-1">
+            <ProductGrid
+              initialProducts={products ?? []}
+              total={count ?? 0}
+              categoryId={categoryId}
+              subcategory={subcategory}
+            />
+          </div>
         </div>
       </div>
     </div>

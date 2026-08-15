@@ -3,7 +3,7 @@ import EnquiryForm from "@/components/enquiryForm"; // remove if truly unused el
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[75vh] md:h-screen flex items-center overflow-hidden">
+    <section className="relative h-[420px] sm:h-[460px] lg:h-[500px] overflow-hidden flex items-center">
           <picture className="absolute inset-0 block w-full h-full">
             <source
               media="(max-width: 767px)"
