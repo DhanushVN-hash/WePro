@@ -217,7 +217,7 @@ export default function EnquiryForm({
     }
 
     if (product.length > MAX_LENGTHS.product) {
-      setErrorMessage("Product name is too long.");
+      setErrorMessage("company name is too long.");
       return false;
     }
 
@@ -685,7 +685,7 @@ export default function EnquiryForm({
                       text-gray-800
                     "
                   >
-                    Product *
+                    company *
                   </label>
 
                   <input
@@ -694,7 +694,7 @@ export default function EnquiryForm({
                     type="text"
                     value={form.product}
                     onChange={handleChange}
-                    placeholder="Product name or model"
+                    placeholder="company name or"
                     required
                     maxLength={MAX_LENGTHS.product}
                     disabled={loading}
