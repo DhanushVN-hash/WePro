@@ -211,7 +211,7 @@ export default function Footer() {
               </a>
 
               <a
-                href="#"
+                href="https://www.instagram.com/weproindustrial?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
                 aria-label="Instagram"
                 className="w-10 h-10 rounded-full bg-[#242424] flex items-center justify-center text-gray-400 hover:bg-primary hover:text-black transition-all duration-300 hover:-translate-y-1"
               >
