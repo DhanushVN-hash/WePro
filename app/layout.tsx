@@ -28,8 +28,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
+  
 }: Readonly<{
   children: React.ReactNode;
+  
 }>) {
   return (
     <html
@@ -51,6 +53,7 @@ export default function RootLayout({
         <Navbar />
         
         <main className="flex-1">{children}</main>
+          <FloatingWhatsApp />
       </body>
     </html>
   );
