@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 
+interface ProductDropdownProps {
+  onNavigate?: () => void;
+}
+
 const items = [
   { id: 3, name: "Pneumatic Nailers & Staplers" },
   { id: 4, name: "Fasteners" },
@@ -10,18 +14,32 @@ const items = [
   { id: 7, name: "Accessory & Others" },
 ];
 
-export default function ProductDropdown() {
+export default function ProductDropdown({
+  onNavigate,
+}: ProductDropdownProps) {
   return (
-    <div className="mt-3 w-80 overflow-hidden rounded-xl border border-yellow-500/20 bg-secondary shadow-2xl">
-
-      <ul className="py-2">
+    <div className="w-[290px] bg-[#666666] shadow-lg">
+      <ul className="py-1">
         {items.map((item) => (
           <li key={item.id}>
             <Link
               href={`/products?category=${item.id}`}
-              className="flex items-center justify-between px-6 py-4 text-gray-200 transition-all duration-200 hover:bg-primary hover:text-black hover:pl-8"
+              onClick={onNavigate}
+              className="
+                block
+                px-4
+                py-1.5
+                text-[18px]
+                font-semibold
+                leading-7
+                text-yellow-400
+                transition-colors
+                duration-150
+                hover:bg-[#555555]
+                hover:text-yellow-300
+              "
             >
-              <span>{item.name}</span>
+              {item.name}
             </Link>
           </li>
         ))}
