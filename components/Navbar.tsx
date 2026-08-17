@@ -45,7 +45,7 @@ function BoltGlyph({ className = "" }: { className?: string }) {
 // breaks. Point it at a dedicated /resources route if you have one.
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/#about", label: "Resources" },
+  { href: "/#about", label: "About" },
   { href: "/#enquiry", label: "Contact" },
 ];
 
