@@ -4,12 +4,12 @@ export const runtime = "nodejs";
 
 const MAX_LENGTHS = {
   name: 100,
-  firstName: 40,
-  lastName: 40,
-  email: 100,
-  phone: 10,
+  firstName: 50,
+  lastName: 50,
+  email: 254,
+  phone: 20,
   countryCode: 5,
-  product: 100,
+  product: 150,
   message: 3000,
 } as const;
 
@@ -50,7 +50,7 @@ const rateLimitStore = new Map<
 >();
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const RATE_LIMIT_MAX_REQUESTS = 5;
+const RATE_LIMIT_MAX_REQUESTS = 50;
 
 function getClientIp(req: Request): string {
   const forwardedFor = req.headers.get("x-forwarded-for");
@@ -623,168 +623,239 @@ export async function POST(req: Request) {
       );
     }
 
-    /*
-     * ------------------------------------------------------
-     * 15. Brevo configuration
-     * ------------------------------------------------------
-     */
-    const brevoApiKey =
-      process.env.BREVO_API_KEY;
+/*
+ * ------------------------------------------------------
+ * 15. Save enquiry to Supabase
+ * ------------------------------------------------------
+ */
 
-    const senderEmail =
-      process.env.BREVO_SENDER_EMAIL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceRoleKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    const recipientEmail =
-      process.env.BREVO_RECIPIENT_EMAIL;
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  console.error("Supabase environment variables are missing.");
 
-    if (
-      !brevoApiKey ||
-      !senderEmail ||
-      !recipientEmail
-    ) {
-      console.error(
-        "Brevo environment variables are missing."
-      );
+  return NextResponse.json(
+    {
+      error: "Database service is not configured.",
+    },
+    { status: 500 }
+  );
+}
 
-      return NextResponse.json(
-        {
-          error:
-            "Email service is not configured.",
-        },
-        { status: 500 }
-      );
-    }
+const supabaseResponse = await fetch(
+  `${supabaseUrl}/rest/v1/enquiries`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: supabaseServiceRoleKey,
+      Authorization: `Bearer ${supabaseServiceRoleKey}`,
+      Prefer: "return=minimal",
+    },
+body: JSON.stringify({
+  name:
+    suppliedName ||
+    `${firstName} ${lastName}`.trim(),
+  email,
+  phone,
+  product,
+  message,
+  status: "New",
+}),
+    cache: "no-store",
+  }
+);
 
-    /*
-     * ------------------------------------------------------
-     * 16. Prepare safe HTML
-     * ------------------------------------------------------
-     */
-    const safeName = escapeHtml(
-      suppliedName ||
-        `${firstName} ${lastName}`.trim()
-    );
+if (!supabaseResponse.ok) {
+  const errorText = await supabaseResponse.text();
 
-    const safeEmail = escapeHtml(email);
-    const safePhone = escapeHtml(phone);
-    const safeProduct = escapeHtml(product);
+  console.error(
+    "Supabase enquiry insert failed:",
+    supabaseResponse.status,
+    errorText
+  );
 
-    const safeMessage = escapeHtml(
-      message
-    ).replace(/\r?\n/g, "<br>");
+  return NextResponse.json(
+    {
+      error:
+        "Unable to save enquiry. Please try again.",
+    },
+    { status: 500 }
+  );
+}
 
-    /*
-     * ------------------------------------------------------
-     * 17. Send Brevo email
-     * ------------------------------------------------------
-     */
-    const response = await fetch(
-      "https://api.brevo.com/v3/smtp/email",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": brevoApiKey,
-        },
-        body: JSON.stringify({
-          sender: {
-            name: "WE PRO Industrial Products",
-            email: senderEmail,
-          },
+/*
+ * ------------------------------------------------------
+ * 16. Send Brevo email
+ * ------------------------------------------------------
+ */
 
-          to: [
-            {
-              email: recipientEmail,
-            },
-          ],
+const brevoApiKey =
+  process.env.BREVO_API_KEY;
 
-          replyTo: {
-            email,
-            name: `${firstName} ${lastName}`.trim(),
-          },
+const senderEmail =
+  process.env.BREVO_SENDER_EMAIL;
 
-          subject: `New Enquiry - ${safeProduct}`,
+const recipientEmail =
+  process.env.BREVO_RECIPIENT_EMAIL;
 
-          htmlContent: `
-            <h2>New Product Enquiry</h2>
+if (
+  !brevoApiKey ||
+  !senderEmail ||
+  !recipientEmail
+) {
+  console.error(
+    "Brevo environment variables are missing."
+  );
 
-            <p>
-              <strong>Name:</strong>
-              ${safeName}
-            </p>
+  // IMPORTANT:
+  // The enquiry has already been saved to Supabase.
+  // Do not delete it just because email configuration
+  // is missing.
 
-            <p>
-              <strong>Email:</strong>
-              ${safeEmail}
-            </p>
+  return NextResponse.json(
+    {
+      success: true,
+      warning:
+        "Enquiry saved, but email notification is not configured.",
+    },
+    { status: 200 }
+  );
+}
 
-            <p>
-              <strong>Phone:</strong>
-              ${safePhone}
-            </p>
+/*
+ * ------------------------------------------------------
+ * 17. Prepare safe HTML
+ * ------------------------------------------------------
+ */
 
-            <p>
-              <strong>Product:</strong>
-              ${safeProduct}
-            </p>
+const safeName = escapeHtml(
+  suppliedName ||
+    `${firstName} ${lastName}`.trim()
+);
 
-            <p>
-              <strong>Terms accepted:</strong>
-              Yes
-            </p>
+const safeEmail = escapeHtml(email);
+const safePhone = escapeHtml(phone);
+const safeProduct = escapeHtml(product);
 
-            <p>
-              <strong>Message:</strong>
-            </p>
+const safeMessage = escapeHtml(
+  message
+).replace(/\r?\n/g, "<br>");
 
-            <p>
-              ${safeMessage}
-            </p>
-          `,
-        }),
-        cache: "no-store",
-      }
-    );
+/*
+ * ------------------------------------------------------
+ * 18. Send Brevo email
+ * ------------------------------------------------------
+ */
 
-    /*
-     * ------------------------------------------------------
-     * 18. Brevo response
-     * ------------------------------------------------------
-     */
-    if (!response.ok) {
-      const errorText =
-        await response.text();
-
-      /*
-       * Don't expose Brevo's internal error
-       * details to the visitor.
-       */
-      console.error(
-        "Brevo request failed:",
-        response.status,
-        errorText
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Unable to send enquiry. Please try again.",
-        },
-        { status: 502 }
-      );
-    }
-
-    /*
-     * ------------------------------------------------------
-     * 19. Success
-     * ------------------------------------------------------
-     */
-    return NextResponse.json(
-      {
-        success: true,
+const brevoResponse = await fetch(
+  "https://api.brevo.com/v3/smtp/email",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": brevoApiKey,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "WE PRO Industrial Products",
+        email: senderEmail,
       },
-      { status: 200 }
-    );
+
+      to: [
+        {
+          email: recipientEmail,
+        },
+      ],
+
+      replyTo: {
+        email,
+        name: `${firstName} ${lastName}`.trim(),
+      },
+
+      subject: `New Enquiry - ${safeProduct}`,
+
+      htmlContent: `
+        <h2>New Product Enquiry</h2>
+
+        <p>
+          <strong>Name:</strong>
+          ${safeName}
+        </p>
+
+        <p>
+          <strong>Email:</strong>
+          ${safeEmail}
+        </p>
+
+        <p>
+          <strong>Phone:</strong>
+          ${safePhone}
+        </p>
+
+        <p>
+          <strong>Product:</strong>
+          ${safeProduct}
+        </p>
+
+        <p>
+          <strong>Terms accepted:</strong>
+          Yes
+        </p>
+
+        <p>
+          <strong>Message:</strong>
+        </p>
+
+        <p>
+          ${safeMessage}
+        </p>
+      `,
+    }),
+    cache: "no-store",
+  }
+);
+
+if (!brevoResponse.ok) {
+  const errorText = await brevoResponse.text();
+
+  console.error(
+    "Brevo request failed:",
+    brevoResponse.status,
+    errorText
+  );
+
+  /*
+   * The enquiry is already safely stored
+   * in the Admin Panel database.
+   *
+   * Therefore do NOT return a complete failure.
+   */
+  return NextResponse.json(
+    {
+      success: true,
+      warning:
+        "Enquiry saved successfully, but email notification could not be sent.",
+    },
+    { status: 200 }
+  );
+}
+
+/*
+ * ------------------------------------------------------
+ * 19. Success
+ * ------------------------------------------------------
+ */
+
+return NextResponse.json(
+  {
+    success: true,
+  },
+  { status: 200 }
+);
+
   } catch (error) {
     /*
      * Never expose internal server errors to the client.

@@ -485,57 +485,7 @@ export default function EnquiryForm({
                 </p>
               </div>
 
-              {/* ======================================
-                  ERROR MESSAGE
-                  ====================================== */}
 
-              {errorMessage && (
-                <div
-                  role="alert"
-                  aria-live="assertive"
-                  className="
-                    mb-5
-                    border
-                    border-red-200
-                    bg-red-50
-                    px-4
-                    py-3
-                    text-sm
-                    text-red-700
-                  "
-                >
-                  {errorMessage}
-                </div>
-              )}
-
-              {/* ======================================
-                  SUCCESS MESSAGE
-                  ====================================== */}
-
-              {successMessage && (
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className="
-                    mb-5
-                    border
-                    border-green-200
-                    bg-green-50
-                    px-4
-                    py-3
-                    text-sm
-                    text-green-700
-                  "
-                >
-                  {successMessage}
-                </div>
-              )}
-
-              <form
-                onSubmit={handleSubmit}
-                className="space-y-5"
-                noValidate
-              >
                 {/* ======================================
                     FIRST NAME + LAST NAME
                     ====================================== */}
@@ -945,6 +895,59 @@ export default function EnquiryForm({
                     Security verification is not configured.
                   </div>
                 )}
+
+              {/* ======================================
+                  ERROR MESSAGE
+                  ====================================== */}
+
+              {errorMessage && (
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="
+                    mb-5
+                    border
+                    border-red-200
+                    bg-red-50
+                    px-4
+                    py-3
+                    text-sm
+                    text-red-700
+                  "
+                >
+                  {errorMessage}
+                </div>
+              )}
+
+              {/* ======================================
+                  SUCCESS MESSAGE
+                  ====================================== */}
+
+              {successMessage && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="
+                    mb-5
+                    border
+                    border-green-200
+                    bg-green-50
+                    px-4
+                    py-3
+                    text-sm
+                    text-green-700
+                  "
+                >
+                  {successMessage}
+                </div>
+              )}
+
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-5"
+                noValidate
+              >
+
 
                 {/* ======================================
                     SUBMIT
