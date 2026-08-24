@@ -49,6 +49,7 @@ type EnquiryFormProps = {
   defaultProduct?: string;
   imageSrc?: string;
   showImage?: boolean;
+  productPage?: boolean;
 };
 
 declare global {
@@ -71,6 +72,7 @@ export default function EnquiryForm({
   defaultProduct = "",
   imageSrc = "https://res.cloudinary.com/dthrkeu9m/image/upload/f_auto,q_auto/1000181275_i2jdei",
   showImage = true,
+  productPage = false,
 }: EnquiryFormProps) {
   const [form, setForm] = useState<FormData>(
     getInitialForm(defaultProduct)
@@ -635,7 +637,7 @@ export default function EnquiryForm({
                       text-gray-800
                     "
                   >
-                    company *
+                    { productPage ? "Product" : "company" } *
                   </label>
 
                   <input
@@ -644,7 +646,7 @@ export default function EnquiryForm({
                     type="text"
                     value={form.product}
                     onChange={handleChange}
-                    placeholder="company name or"
+                    placeholder= {productPage ? "Product name" : "Company name" }
                     required
                     maxLength={MAX_LENGTHS.product}
                     disabled={loading}
