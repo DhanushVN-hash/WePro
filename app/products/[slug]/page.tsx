@@ -200,8 +200,8 @@ export default async function ProductDetails({
         ====================================================== */}
         <section
           className="
-            grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]
-            gap-x-12 lg:gap-x-16
+            grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr]
+            gap-x-12
             gap-y-5 lg:gap-y-0
             items-start
           "
@@ -327,17 +327,17 @@ export default async function ProductDetails({
                 {specRows.map(({ label, value, multiline }, index) => (
                   <div
                     key={label}
-                    className={`grid grid-cols-[minmax(7rem,0.85fr)_minmax(0,1.15fr)] sm:grid-cols-3 ${
+                    className={`grid grid-cols-[minmax(8rem,0.95fr)_minmax(0,1.35fr)] ${
                       index !== specRows.length - 1
                         ? "border-b border-gray-200"
                         : ""
                     }`}
                   >
-                    <dt className="min-w-0 px-4 py-3 lg:py-3.5 bg-gray-50 sm:bg-white font-semibold text-[#101820] text-sm sm:text-base sm:border-r sm:border-gray-200 break-words">
+                    <dt className="min-w-0 px-4 py-3 lg:py-3.5 bg-gray-50 sm:bg-white font-semibold text-[#101820] text-sm sm:text-base border-r border-gray-200 break-words">
                       {label}
                     </dt>
                     <dd
-                      className={`min-w-0 px-4 py-3 lg:py-3.5 sm:col-span-2 text-gray-700 text-sm sm:text-base break-words ${
+                      className={`min-w-0 px-4 py-3 lg:py-3.5 text-gray-700 text-sm sm:text-base break-words ${
                         multiline ? "whitespace-pre-line" : ""
                       }`}
                     >

@@ -964,13 +964,14 @@ export default function EnquiryForm({
                   className="
                     mt-2
                     flex
-                    h-12
+                    h-11
                     w-full
+                    sm:w-fit
                     items-center
                     justify-center
                     bg-primary
-                    px-6
-                    text-base
+                    px-10
+                    text-sm
                     font-bold
                     text-black
                     transition-colors
