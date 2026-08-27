@@ -1,12 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_ADMIN_PATHS = ["/admin/login"];
+// Login page is now outside /admin.
+const PUBLIC_ADMIN_PATHS = ["/login"];
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request,
-  });
+  let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,47 +17,34 @@ export async function middleware(request: NextRequest) {
         },
 
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
 
-          response = NextResponse.next({
-            request,
-          });
+          response = NextResponse.next({ request });
 
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
   );
 
-  // Refresh Supabase session if necessary.
+  // Refresh the Supabase session cookie if necessary.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
 
-  // Login page must always remain accessible.
+  // /login is public and does not require authentication.
   const isPublicAdminPath =
-    path === "/admin/login" ||
-    path.startsWith("/admin/login/");
+    path === "/login" || path.startsWith("/login/");
 
-  // Only the configured admin email can access protected admin pages.
-  const isAdmin =
-    !!user &&
-    !!process.env.ADMIN_EMAIL &&
-    user.email?.toLowerCase() ===
-      process.env.ADMIN_EMAIL.toLowerCase();
-
-  // Protect all /admin pages except /admin/login.
-  if (path.startsWith("/admin") && !isPublicAdminPath && !isAdmin) {
-    const loginUrl = request.nextUrl.clone();
-
-    loginUrl.pathname = "/admin/login";
-    loginUrl.search = "";
+  // Protect all /admin routes.
+  if (path.startsWith("/admin") && !isPublicAdminPath && !user) {
+    const loginUrl = new URL("/login", request.url);
 
     loginUrl.searchParams.set("redirectedFrom", path);
 
