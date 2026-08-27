@@ -1,11 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Paths under /admin that should stay reachable WITHOUT a session.
 const PUBLIC_ADMIN_PATHS = ["/admin/login"];
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  let response = NextResponse.next({
+    request,
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,31 +16,52 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
+
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
+
+          response = NextResponse.next({
+            request,
+          });
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
         },
       },
     }
   );
 
-  // IMPORTANT: this call refreshes the session cookie if it's expired.
-  // Do not remove it or admin sessions will silently stop refreshing.
+  // Refresh Supabase session if necessary.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPublicAdminPath = PUBLIC_ADMIN_PATHS.some((p) => path.startsWith(p));
 
-  if (path.startsWith("/admin") && !isPublicAdminPath && !user) {
-    const loginUrl = new URL("/admin/login", request.url);
+  // Login page must always remain accessible.
+  const isPublicAdminPath =
+    path === "/admin/login" ||
+    path.startsWith("/admin/login/");
+
+  // Only the configured admin email can access protected admin pages.
+  const isAdmin =
+    !!user &&
+    !!process.env.ADMIN_EMAIL &&
+    user.email?.toLowerCase() ===
+      process.env.ADMIN_EMAIL.toLowerCase();
+
+  // Protect all /admin pages except /admin/login.
+  if (path.startsWith("/admin") && !isPublicAdminPath && !isAdmin) {
+    const loginUrl = request.nextUrl.clone();
+
+    loginUrl.pathname = "/admin/login";
+    loginUrl.search = "";
+
     loginUrl.searchParams.set("redirectedFrom", path);
+
     return NextResponse.redirect(loginUrl);
   }
 
