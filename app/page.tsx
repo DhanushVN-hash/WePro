@@ -28,7 +28,7 @@ export default function Home() {
         </Suspense>
       </ScrollReveal>
 
-      <ScrollReveal>
+      
         <Suspense
           fallback={
             <div className="py-20 text-center text-gray-500">
@@ -38,7 +38,7 @@ export default function Home() {
         >
           <ProductsOverview />
         </Suspense>
-      </ScrollReveal>
+      
 
       
         <EnquiryForm showImage={true} />
