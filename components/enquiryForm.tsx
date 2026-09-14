@@ -407,25 +407,26 @@ export default function EnquiryForm({
         className="bg-white"
         aria-labelledby="enquiry-title"
       >
-        <div
-          className={
-            showImage
-              ? "grid lg:grid-cols-[0.85fr_1.15fr]"
-              : "block"
-          }
-        >
+ <div
+  className={
+    showImage
+      ? "grid items-start lg:grid-cols-[0.85fr_1.15fr]"
+      : "block"
+  }
+>
+        
           {/* ==========================================
               IMAGE
               ========================================== */}
 
-          {showImage && (
-            <div className="relative hidden min-h-[650px] lg:block">
-              <img
-                src={imageSrc}
-                alt="WE PRO Industrial Products"
-                className="absolute inset-0 h-full w-full object-cover"
-                loading="lazy"
-              />
+{showImage && (
+  <div className="relative hidden min-h-[650px] self-start lg:sticky lg:top-0 lg:block lg:h-screen">
+    <img
+      src={imageSrc}
+      alt="WE PRO Industrial Products"
+      className="absolute inset-0 h-full w-full object-cover"
+      loading="lazy"
+    />
 
               <div className="absolute inset-0 bg-black/45" />
 

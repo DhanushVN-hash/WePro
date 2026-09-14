@@ -54,6 +54,8 @@ export default function Navbar() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
   const [productsOpen, setProductsOpen] = useState(false);
 
@@ -71,18 +73,24 @@ export default function Navbar() {
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Header changes slightly after scrolling.
+// Hide navbar on scroll down, show on scroll up.
+
   useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > 24);
-    }
+  function onScroll() {
+    const currentScrollY = window.scrollY;
 
-    onScroll();
+    setScrolled(currentScrollY > 24);
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    // Show only at the very top.
+    setIsNavbarVisible(currentScrollY <= 0);
+  }
 
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  onScroll();
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  return () => window.removeEventListener("scroll", onScroll);
+}, []);
 
   // Search: debounced and cancels stale requests.
   useEffect(() => {
@@ -259,7 +267,13 @@ export default function Navbar() {
   const closeProducts = useCallback(() => setProductsOpen(false), []);
 
   return (
-    <header className="sticky top-0 z-50 text-white">
+<header
+  className={`
+    sticky top-0 z-50 text-white
+    transition-transform duration-300 ease-in-out
+    ${isNavbarVisible ? "translate-y-0" : "-translate-y-full"}
+  `}
+>
       {/* Announcement bar — compact, black text on yellow */}
       <div className="bg-primary">
         <div

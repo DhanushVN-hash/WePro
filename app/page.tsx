@@ -40,9 +40,9 @@ export default function Home() {
         </Suspense>
       </ScrollReveal>
 
-      <ScrollReveal>
+      
         <EnquiryForm showImage={true} />
-      </ScrollReveal>
+      
 
       <Footer />
     </>

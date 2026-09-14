@@ -1,52 +1,53 @@
+
 import Link from "next/link";
-import EnquiryForm from "@/components/enquiryForm"; // remove if truly unused elsewhere
 
 export default function Hero() {
   return (
-    <section className="relative h-[420px] sm:h-[460px] lg:h-[500px] overflow-hidden flex items-center">
-          <picture className="absolute inset-0 block w-full h-full">
-            <source
-              media="(max-width: 767px)"
-              srcSet="https://res.cloudinary.com/allujgvo/image/upload/f_auto,q_auto,w_800/v1785675096/ChatGPT_Image_Aug_2_2026_06_18_52_PM_lwjdgy.png"
-            />
+    <section className="relative overflow-hidden bg-black">
+      <div className="mx-auto grid min-h-[500px] max-w-7xl items-center lg:grid-cols-2">
+        {/* LEFT: TEXT */}
+        <div className="px-6 py-16 text-white sm:px-8 lg:px-12 lg:py-20">
+          <div className="mb-4 h-[3px] w-14 bg-primary" />
 
-            <img
-              src="https://res.cloudinary.com/dthrkeu9m/image/upload/f_auto,q_auto,w_1920/c2f06e95-954d-4bc1-bc28-2b04fd030fbf_fivcac"
-              alt="Industrial Pneumatic Tools"
-              width="1920"
-              height="1080"
-              fetchPriority="high"
-              decoding="async"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          </picture>
+          <h1 className="mb-5 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
+            Industrial Pneumatic Tools
+          </h1>
 
-      <div className="absolute inset-0 bg-black/60 z-10 pointer-events-none" />
+          <p className="mb-8 max-w-xl text-base leading-relaxed text-gray-300 sm:text-lg">
+            Precision. Performance. Reliability. Premium pneumatic tools and
+            fastening solutions for industrial and professional applications.
+          </p>
 
-      <div className="relative z-20 max-w-7xl mx-auto px-6 text-white">
-        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold leading-tight mb-5">
-          Industrial Pneumatic Tools
-        </h1>
+          <div className="flex flex-wrap gap-4">
+            <Link
+              href="/products"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-black transition hover:bg-yellow-400"
+            >
+              View Products
+            </Link>
 
-        <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8 max-w-2xl">
-          Precision. Performance. Reliability. Premium pneumatic tools and
-          fastening solutions for industrial and professional applications.
-        </p>
+            <Link
+              href="/#enquiry"
+              className="inline-flex items-center justify-center rounded-lg border border-white px-6 py-3 font-semibold text-white transition hover:bg-white hover:text-black"
+            >
+              Contact Us
+            </Link>
+          </div>
+        </div>
 
-        <div className="flex flex-wrap gap-4">
-          <Link
-            href="/products"
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-black transition hover:bg-yellow-400"
+        {/* RIGHT: SEAMLESS VIDEO */}
+        <div className="relative min-h-[300px] self-stretch lg:min-h-[500px]">
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
           >
-            View Products
-          </Link>
-
-          <Link
-            href="/#enquiry"
-            className="inline-flex items-center justify-center rounded-lg border border-white px-6 py-3 font-semibold text-white transition hover:bg-white hover:text-black"
-          >
-            Contact Us
-          </Link>
+            <source src="/videos/industrial-tools.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
         </div>
       </div>
     </section>
