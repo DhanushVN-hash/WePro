@@ -2,9 +2,9 @@
 
 import { Menu, X, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ProductDropdown from "@/components/productDropdown";
 import { supabase } from "@/lib/supabase";
 
@@ -16,7 +16,12 @@ interface SearchProduct {
   image_url?: string;
 }
 
-// Simple placeholder used when a product has no image.
+const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/#about", label: "About" },
+  { href: "/#enquiry", label: "Contact" },
+];
+
 function BoltGlyph({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -41,21 +46,12 @@ function BoltGlyph({ className = "" }: { className?: string }) {
   );
 }
 
-// NOTE: "Resources" is new — it reuses the old "About" anchor so no route
-// breaks. Point it at a dedicated /resources route if you have one.
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/#about", label: "About" },
-  { href: "/#enquiry", label: "Contact" },
-];
-
 export default function Navbar() {
   const pathname = usePathname();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
-  const lastScrollY = useRef(0);
 
   const [productsOpen, setProductsOpen] = useState(false);
 
@@ -65,34 +61,60 @@ export default function Navbar() {
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState(false);
 
+  const lastScrollY = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+
   const desktopSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchRef = useRef<HTMLDivElement>(null);
   const desktopInputRef = useRef<HTMLInputElement>(null);
   const productsRef = useRef<HTMLLIElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
+const navbarHiddenRef = useRef(false);
+  
 
-// Hide navbar on scroll down, show on scroll up.
-
-  useEffect(() => {
-  function onScroll() {
+// Navbar scroll behavior
+useEffect(() => {
+  function handleScroll() {
     const currentScrollY = window.scrollY;
 
     setScrolled(currentScrollY > 24);
 
-    // Show only at the very top.
-    setIsNavbarVisible(currentScrollY <= 0);
+    if (mobileOpen) {
+      setIsNavbarVisible(true);
+      lastScrollY.current = currentScrollY;
+      return;
+    }
+
+    const hero = document.getElementById("hero");
+    const heroHeight = hero?.offsetHeight ?? 500;
+
+    // Navbar hide/show threshold: 25% of hero height
+    const threshold = heroHeight * 0.25;
+
+    if (currentScrollY > threshold) {
+      // Hide after passing 25% of the Hero
+      setIsNavbarVisible(false);
+    } else {
+      // Show again when returning above the same 25% point
+      setIsNavbarVisible(true);
+    }
+
+    lastScrollY.current = currentScrollY;
   }
 
-  onScroll();
+  handleScroll();
 
-  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("scroll", handleScroll, {
+    passive: true,
+  });
 
-  return () => window.removeEventListener("scroll", onScroll);
-}, []);
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+}, [mobileOpen]);
 
-  // Search: debounced and cancels stale requests.
+  // Product search
   useEffect(() => {
     const query = search.trim();
 
@@ -131,9 +153,9 @@ export default function Navbar() {
         } else {
           setResults(data || []);
         }
-      } catch (err) {
-        if ((err as Error)?.name !== "AbortError") {
-          console.error("Search failed:", err);
+      } catch (error) {
+        if ((error as Error)?.name !== "AbortError") {
+          console.error("Search failed:", error);
           setResults([]);
           setSearchError(true);
         }
@@ -155,18 +177,27 @@ export default function Navbar() {
     setSearchError(false);
   }, []);
 
-  // Close search/product dropdown when clicking outside.
+  const closeMobileMenu = useCallback(() => {
+    setMobileOpen(false);
+    mobileToggleRef.current?.focus();
+  }, []);
+
+  const closeProducts = useCallback(() => {
+    setProductsOpen(false);
+  }, []);
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
 
-      const clickedInsideDesktopSearch =
+      const insideDesktopSearch =
         desktopSearchRef.current?.contains(target);
 
-      const clickedInsideMobileSearch =
+      const insideMobileSearch =
         mobileSearchRef.current?.contains(target);
 
-      if (!clickedInsideDesktopSearch && !clickedInsideMobileSearch) {
+      if (!insideDesktopSearch && !insideMobileSearch) {
         setSearchOpen(false);
       }
 
@@ -180,36 +211,43 @@ export default function Navbar() {
 
     document.addEventListener("mousedown", handleClickOutside);
 
-    return () =>
+    return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
-  // Keyboard controls.
+  // Escape key
   useEffect(() => {
-    function handleKeydown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        if (searchOpen) {
-          setSearchOpen(false);
-          desktopInputRef.current?.blur();
-        }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
 
-        if (productsOpen) {
-          setProductsOpen(false);
-        }
+      if (searchOpen) {
+        setSearchOpen(false);
+        desktopInputRef.current?.blur();
+      }
 
-        if (mobileOpen) {
-          setMobileOpen(false);
-          mobileToggleRef.current?.focus();
-        }
+      if (productsOpen) {
+        setProductsOpen(false);
+      }
+
+      if (mobileOpen) {
+        closeMobileMenu();
       }
     }
 
-    window.addEventListener("keydown", handleKeydown);
+    document.addEventListener("keydown", handleKeyDown);
 
-    return () => window.removeEventListener("keydown", handleKeydown);
-  }, [searchOpen, productsOpen, mobileOpen]);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    searchOpen,
+    productsOpen,
+    mobileOpen,
+    closeMobileMenu,
+  ]);
 
-  // Lock body scrolling while mobile menu is open.
+  // Lock body scrolling when mobile drawer is open
   useEffect(() => {
     if (!mobileOpen) return;
 
@@ -259,711 +297,549 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
-  const isActive = (href: string) =>
-    href === "/"
-      ? pathname === "/"
-      : pathname?.startsWith(href.replace("/#", "/"));
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
 
-  const closeProducts = useCallback(() => setProductsOpen(false), []);
+    return pathname?.startsWith(href.replace("/#", "/"));
+  };
+
+  const mobileLinks = [
+    { href: "/", label: "Home" },
+    { href: "/products", label: "Products" },
+    ...NAV_LINKS.slice(1),
+  ];
 
   return (
-<header
-  className={`
-    sticky top-0 z-50 text-white
-    transition-transform duration-300 ease-in-out
-    ${isNavbarVisible ? "translate-y-0" : "-translate-y-full"}
-  `}
->
-      {/* Announcement bar — compact, black text on yellow */}
-      <div className="bg-primary">
-        <div
-          className="
-            mx-auto flex h-[28px] sm:h-[30px]
-            max-w-7xl items-center justify-center
-            gap-2
-            px-4 sm:px-6
-            text-center text-[10px] sm:text-[11px]
-            font-semibold uppercase tracking-[0.08em]
-            text-black/85
-          "
-        >
-          <span className="h-1 w-1 shrink-0 rounded-full bg-black/50" />
-          <span>Trusted Industrial Fastening Solutions Since 1996</span>
-          <span className="h-1 w-1 shrink-0 rounded-full bg-black/50" />
-        </div>
-      </div>
-
-      {/* Main Navbar */}
-      <nav
+    <>
+      {/* ================= HEADER ================= */}
+      <header
         className={`
-          bg-secondary
-          transition-shadow duration-200
-          ${scrolled ? "shadow-md" : ""}
+          sticky top-0 z-[80] text-white
+          transition-transform duration-300 ease-in-out
+          ${
+            isNavbarVisible || mobileOpen
+              ? "translate-y-0"
+              : "-translate-y-full"
+          }
         `}
       >
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <div className="grid h-[68px] grid-cols-[auto_1fr_auto] items-center gap-4 sm:h-[72px] lg:gap-6">
-            {/* Logo */}
-            <Link
-              href="/"
-              onClick={clearSearch}
+        {/* Announcement bar */}
+        <div className="bg-primary">
+          <div
+            className="
+              mx-auto flex h-[28px] sm:h-[30px]
+              max-w-7xl items-center justify-center
+              gap-2 px-4 sm:px-6
+              text-center text-[10px] sm:text-[11px]
+              font-semibold uppercase tracking-[0.08em]
+              text-black/85
+            "
+          >
+            <span className="h-1 w-1 rounded-full bg-black/50" />
+            <span>Trusted Industrial Fastening Solutions Since 1996</span>
+            <span className="h-1 w-1 rounded-full bg-black/50" />
+          </div>
+        </div>
+
+        {/* Main navbar */}
+        <nav
+          className={`
+            bg-secondary transition-shadow duration-200
+            ${scrolled ? "shadow-md" : ""}
+          `}
+        >
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+            <div
               className="
-                flex w-[150px] shrink-0 flex-col justify-center
-                rounded-md
-                sm:w-[170px]
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-primary
+                grid h-[68px]
+                grid-cols-[auto_1fr_auto]
+                items-center gap-4
+                sm:h-[72px] lg:gap-6
               "
             >
-              <div className="text-xl font-bold leading-none text-yellow-400 sm:text-2xl">
-                WE PRO
-              </div>
-
-              <div className="mt-1 text-[9px] uppercase tracking-[0.16em] text-gray-300 sm:text-[10px]">
-                Industrial Products
-              </div>
-            </Link>
-
-            {/* Desktop Navigation — centered between logo and controls */}
-            <ul className="hidden h-full items-center justify-center gap-8 lg:flex">
-              <li className="flex h-full items-center">
-                <Link
-                  href="/"
-                  aria-current={isActive("/") ? "page" : undefined}
-                  className={`
-                    text-[15px] font-semibold
-                    transition-colors duration-150
-                    focus-visible:outline-none
-                    focus-visible:ring-2
-                    focus-visible:ring-primary
-                    rounded-sm
-                    ${isActive("/") ? "text-primary" : "hover:text-primary"}
-                  `}
-                >
-                  Home
-                </Link>
-              </li>
-
-              <li className="relative flex h-full items-center" ref={productsRef}>
-                <button
-                  type="button"
-                  aria-haspopup="true"
-                  aria-expanded={productsOpen}
-                  onClick={() => setProductsOpen((v) => !v)}
-                  onMouseEnter={() => setProductsOpen(true)}
-                  className="
-                    flex items-center gap-1.5
-                    text-[15px] font-semibold
-                    transition-colors duration-150
-                    hover:text-primary
-                    focus-visible:outline-none
-                    focus-visible:ring-2
-                    focus-visible:ring-primary
-                    rounded-sm
-                  "
-                >
-                  Products
-                  <span className="text-[9px] leading-none">▼</span>
-                </button>
-
-                {/* Hover-safe bridge + positioned mega menu */}
-                <div
-                  onMouseEnter={() => setProductsOpen(true)}
-                  onMouseLeave={() => setProductsOpen(false)}
-                  className={`
-                    absolute left-1/2 top-full z-50
-                    -translate-x-1/2 pt-3
-                    ${
-                      productsOpen
-                        ? "visible opacity-100"
-                        : "invisible pointer-events-none opacity-0"
-                    }
-                    transition-opacity duration-150
-                  `}
-                >
-                  <ProductDropdown onNavigate={closeProducts} />
+              {/* Logo */}
+              <Link
+                href="/"
+                onClick={clearSearch}
+                className="
+                  flex w-[150px] shrink-0 flex-col
+                  justify-center rounded-md
+                  focus-visible:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-primary
+                  sm:w-[170px]
+                "
+              >
+                <div className="text-xl font-bold leading-none text-yellow-400 sm:text-2xl">
+                  WE PRO
                 </div>
-              </li>
 
-              {NAV_LINKS.slice(1).map((link) => (
-                <li key={link.href} className="flex h-full items-center">
+                <div className="mt-1 text-[9px] uppercase tracking-[0.16em] text-gray-300 sm:text-[10px]">
+                  Industrial Products
+                </div>
+              </Link>
+
+              {/* Desktop navigation */}
+              <ul className="hidden h-full items-center justify-center gap-8 lg:flex">
+                <li className="flex h-full items-center">
                   <Link
-                    href={link.href}
-                    className="
-                      text-[15px] font-semibold
+                    href="/"
+                    aria-current={isActive("/") ? "page" : undefined}
+                    className={`
+                      rounded-sm text-[15px] font-semibold
                       transition-colors duration-150
                       hover:text-primary
                       focus-visible:outline-none
                       focus-visible:ring-2
                       focus-visible:ring-primary
-                      rounded-sm
-                    "
+                      ${
+                        isActive("/")
+                          ? "text-primary"
+                          : "text-white"
+                      }
+                    `}
                   >
-                    {link.label}
+                    Home
                   </Link>
                 </li>
-              ))}
-            </ul>
 
-            {/* Right: search + get quote + mobile toggle */}
-            <div className="flex items-center justify-end gap-3 lg:gap-4">
-              {/* Desktop Search */}
-              <div
-                ref={desktopSearchRef}
-                className="relative z-[200] hidden shrink-0 md:block md:w-[170px] lg:w-[180px]"
-              >
-                <div
-                  className={`
-                    flex h-11 items-center
-                    rounded-md
-                    border
-                    bg-neutral-800
-                    ${searchOpen ? "border-primary" : "border-white/10"}
-                  `}
+                <li
+                  ref={productsRef}
+                  className="relative flex h-full items-center"
                 >
-                  <Search size={16} className="ml-3 shrink-0 text-gray-300" />
-
-                  <input
-                    ref={desktopInputRef}
-                    type="text"
-                    value={search}
-                    onFocus={() => setSearchOpen(true)}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      setSearchOpen(true);
-                    }}
-                    placeholder="Search..."
-                    aria-label="Search products"
+                  <button
+                    type="button"
+                    aria-haspopup="true"
+                    aria-expanded={productsOpen}
+                    onClick={() => setProductsOpen((value) => !value)}
+                    onMouseEnter={() => setProductsOpen(true)}
                     className="
-                      w-full
-                      bg-transparent
-                      px-2 py-2
-                      text-sm text-white
-                      outline-none
-                      placeholder:text-gray-400
+                      flex items-center gap-1.5
+                      rounded-sm text-[15px] font-semibold
+                      transition-colors duration-150
+                      hover:text-primary
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-primary
                     "
-                  />
+                  >
+                    Products
+                    <span className="text-[9px]">▼</span>
+                  </button>
 
-                  {loading && (
-                    <Loader2
-                      size={16}
-                      className="mr-3 shrink-0 animate-spin text-gray-400"
-                    />
-                  )}
+                  <div
+                    onMouseEnter={() => setProductsOpen(true)}
+                    onMouseLeave={() => setProductsOpen(false)}
+                    className={`
+                      absolute left-1/2 top-full z-[100]
+                      -translate-x-1/2 pt-3
+                      transition-opacity duration-150
+                      ${
+                        productsOpen
+                          ? "visible opacity-100"
+                          : "invisible pointer-events-none opacity-0"
+                      }
+                    `}
+                  >
+                    <ProductDropdown onNavigate={closeProducts} />
+                  </div>
+                </li>
 
-                  {!loading && search && (
-                    <button
-                      type="button"
-                      onClick={clearSearch}
+                {NAV_LINKS.slice(1).map((link) => (
+                  <li
+                    key={link.href}
+                    className="flex h-full items-center"
+                  >
+                    <Link
+                      href={link.href}
                       className="
-                        mr-3
-                        shrink-0
-                        text-gray-400
-                        hover:text-white
+                        rounded-sm text-[15px] font-semibold
+                        transition-colors duration-150
+                        hover:text-primary
                         focus-visible:outline-none
                         focus-visible:ring-2
                         focus-visible:ring-primary
-                        rounded-full
                       "
-                      aria-label="Clear search"
                     >
-                      <X size={16} />
-                    </button>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Right controls */}
+              <div className="flex items-center justify-end gap-3 lg:gap-4">
+                {/* Desktop search */}
+                <div
+                  ref={desktopSearchRef}
+                  className="
+                    relative hidden shrink-0
+                    md:block md:w-[170px] lg:w-[180px]
+                  "
+                >
+                  <div
+                    className={`
+                      flex h-11 items-center rounded-md
+                      border bg-neutral-800
+                      ${
+                        searchOpen
+                          ? "border-primary"
+                          : "border-white/10"
+                      }
+                    `}
+                  >
+                    <Search
+                      size={16}
+                      className="ml-3 shrink-0 text-gray-300"
+                    />
+
+                    <input
+                      ref={desktopInputRef}
+                      type="text"
+                      value={search}
+                      onFocus={() => setSearchOpen(true)}
+                      onChange={(event) => {
+                        setSearch(event.target.value);
+                        setSearchOpen(true);
+                      }}
+                      placeholder="Search..."
+                      aria-label="Search products"
+                      className="
+                        w-full bg-transparent
+                        px-2 py-2 text-sm text-white
+                        outline-none placeholder:text-gray-400
+                      "
+                    />
+
+                    {loading && (
+                      <Loader2
+                        size={16}
+                        className="mr-3 animate-spin text-gray-400"
+                      />
+                    )}
+
+                    {!loading && search && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        aria-label="Clear search"
+                        className="mr-3 text-gray-400 hover:text-white"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+
+                  {searchOpen && search.trim().length >= 2 && (
+                    <div
+                      className="
+                        absolute right-0 top-full z-[999]
+                        mt-2 w-[320px] overflow-hidden
+                        rounded-lg border border-gray-200
+                        bg-white shadow-xl
+                      "
+                    >
+                      {loading ? (
+                        <div className="p-4 text-sm text-gray-500">
+                          Searching products...
+                        </div>
+                      ) : searchError ? (
+                        <div className="p-5 text-center text-sm text-gray-500">
+                          Something went wrong.
+                        </div>
+                      ) : results.length > 0 ? (
+                        <div className="max-h-[420px] overflow-y-auto">
+                          {results.map((product) => (
+                            <Link
+                              key={product.id}
+                              href={`/products/${product.slug}`}
+                              onClick={clearSearch}
+                              className="
+                                flex items-center gap-3
+                                border-b border-gray-100
+                                px-4 py-3 hover:bg-gray-50
+                              "
+                            >
+                              <div
+                                className="
+                                  relative flex h-12 w-12 shrink-0
+                                  items-center justify-center
+                                  overflow-hidden rounded-md
+                                  border border-gray-100 bg-gray-50
+                                "
+                              >
+                                {product.image_url ? (
+                                  <Image
+                                    src={product.image_url}
+                                    alt={product.name}
+                                    fill
+                                    sizes="48px"
+                                    className="object-contain p-1"
+                                  />
+                                ) : (
+                                  <BoltGlyph className="h-5 w-5 text-gray-300" />
+                                )}
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-gray-900">
+                                  {product.name}
+                                </p>
+
+                                {product.model && (
+                                  <p className="text-xs text-gray-500">
+                                    Model: {product.model}
+                                  </p>
+                                )}
+                              </div>
+                            </Link>
+                          ))}
+
+                          <Link
+                            href={`/products?search=${encodeURIComponent(search)}`}
+                            onClick={clearSearch}
+                            className="
+                              block bg-amber-50 px-4 py-3
+                              text-center text-sm font-semibold
+                              text-amber-600
+                            "
+                          >
+                            View all products
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="p-6 text-center text-sm text-gray-500">
+                          No products found.
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 
-                {/* Desktop search accessibility */}
-                <span className="sr-only" role="status" aria-live="polite">
-                  {loading
-                    ? "Searching products"
-                    : search.trim().length >= 2
-                    ? `${results.length} result${
-                        results.length === 1 ? "" : "s"
-                      } found`
-                    : ""}
-                </span>
-
-                {/* Desktop Search Results */}
-                {searchOpen && search.trim().length >= 2 && (
-                  <div
-                    className="
-                      absolute right-0 top-full
-                      z-[999] mt-2
-                      w-[320px]
-                      overflow-hidden
-                      rounded-lg
-                      border border-gray-200
-                      bg-white
-                      shadow-xl
-                    "
-                  >
-                    {loading && (
-                      <div className="p-3">
-                        {[...Array(3)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-3 px-2 py-3"
-                          >
-                            <div className="h-12 w-12 shrink-0 rounded-md bg-gray-100" />
-
-                            <div className="flex-1 space-y-2">
-                              <div className="h-3 w-3/4 rounded bg-gray-100" />
-                              <div className="h-2.5 w-1/3 rounded bg-gray-100" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {!loading && searchError && (
-                      <div className="px-5 py-8 text-center">
-                        <p className="font-medium text-gray-700">
-                          Something went wrong
-                        </p>
-
-                        <p className="mt-1 text-sm text-gray-400">
-                          Try searching again in a moment
-                        </p>
-                      </div>
-                    )}
-
-                    {!loading && !searchError && results.length > 0 && (
-                      <div className="max-h-[420px] overflow-y-auto">
-                        <div
-                          className="
-                            border-b border-gray-100
-                            bg-gray-50
-                            px-4 py-2.5
-                            text-[10px] font-semibold uppercase
-                            tracking-[0.12em] text-gray-400
-                          "
-                        >
-                          Products
-                        </div>
-
-                        {results.map((product) => (
-                          <Link
-                            key={product.id}
-                            href={`/products/${product.slug}`}
-                            onClick={clearSearch}
-                            className="
-                              group
-                              flex items-center gap-3
-                              border-b border-gray-100
-                              px-4 py-2.5
-                              last:border-0
-                              hover:bg-gray-50
-                              focus-visible:outline-none
-                              focus-visible:bg-gray-50
-                            "
-                          >
-                            <div
-                              className="
-                                relative flex h-12 w-12 shrink-0
-                                items-center justify-center
-                                overflow-hidden rounded-md
-                                border border-gray-100 bg-gray-50
-                              "
-                            >
-                              {product.image_url ? (
-                                <Image
-                                  src={product.image_url}
-                                  alt={product.name}
-                                  fill
-                                  sizes="48px"
-                                  className="object-contain p-1"
-                                />
-                              ) : (
-                                <BoltGlyph className="h-5 w-5 text-gray-300" />
-                              )}
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <h3 className="truncate text-sm font-semibold leading-5 text-gray-900">
-                                {product.name}
-                              </h3>
-
-                              {product.model && (
-                                <p className="mt-0.5 text-xs text-gray-500">
-                                  Model: {product.model}
-                                </p>
-                              )}
-                            </div>
-                          </Link>
-                        ))}
-
-                        <Link
-                          href={`/products?search=${encodeURIComponent(search)}`}
-                          onClick={clearSearch}
-                          className="
-                            block border-t border-gray-100
-                            bg-amber-50/40
-                            px-5 py-3
-                            text-center text-sm font-semibold
-                            text-amber-600
-                            hover:bg-amber-50
-                          "
-                        >
-                          View all products
-                        </Link>
-                      </div>
-                    )}
-
-                    {!loading && !searchError && results.length === 0 && (
-                      <div className="px-5 py-8 text-center">
-                        <Search size={28} className="mx-auto mb-3 text-gray-300" />
-
-                        <p className="font-medium text-gray-700">
-                          No products found
-                        </p>
-
-                        <p className="mt-1 text-sm text-gray-400">
-                          Try another product name
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Get Quote */}
-              <Link
-                href="/#enquiry"
-                className="
-                  hidden h-11 w-[120px] shrink-0
-                  items-center justify-center
-                  rounded-md
-                  bg-primary
-                  text-sm font-semibold text-black
-                  transition-colors duration-150
-                  hover:bg-yellow-300
-                  focus-visible:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-white
-                  focus-visible:ring-offset-2
-                  focus-visible:ring-offset-secondary
-                  lg:flex
-                "
-              >
-                Get Quote
-              </Link>
-
-              {/* Mobile menu button */}
-              <button
-                ref={mobileToggleRef}
-                type="button"
-                className="
-                  rounded-md p-1
-                  focus-visible:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-primary
-                  lg:hidden
-                "
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-label="Toggle menu"
-                aria-expanded={mobileOpen}
-              >
-                {mobileOpen ? <X size={26} /> : <Menu size={26} />}
-              </button>
-            </div>
-          </div>
-
-          {/* ================================
-              MOBILE SEARCH
-              ================================ */}
-          <div ref={mobileSearchRef} className="relative w-full pb-3 md:hidden">
-            <div
-              className={`
-                flex items-center
-                rounded-md
-                border
-                bg-white
-                ${searchOpen ? "border-primary" : "border-transparent"}
-              `}
-            >
-              <Search size={19} className="ml-3.5 shrink-0 text-gray-400" />
-
-              <input
-                type="text"
-                value={search}
-                onFocus={() => setSearchOpen(true)}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setSearchOpen(true);
-                }}
-                placeholder="Search products..."
-                aria-label="Search products"
-                className="
-                  w-full
-                  bg-transparent
-                  px-3 py-2.5
-                  text-sm text-gray-900
-                  outline-none
-                  placeholder:text-gray-400
-                "
-              />
-
-              {loading && (
-                <Loader2
-                  size={18}
-                  className="mr-3 shrink-0 animate-spin text-gray-400"
-                />
-              )}
-
-              {!loading && search && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
+                {/* Get quote */}
+                <Link
+                  href="/#enquiry"
                   className="
-                    mr-3
-                    shrink-0
-                    text-gray-400
-                    hover:text-gray-700
+                    hidden h-11 w-[120px] shrink-0
+                    items-center justify-center rounded-md
+                    bg-primary text-sm font-semibold text-black
+                    transition-colors hover:bg-yellow-300
+                    focus-visible:outline-none
+                    focus-visible:ring-2 focus-visible:ring-white
+                    lg:flex
+                  "
+                >
+                  Get Quote
+                </Link>
+
+                {/* Mobile hamburger */}
+                <button
+                  ref={mobileToggleRef}
+                  type="button"
+                  onClick={() => setMobileOpen((value) => !value)}
+                  aria-label={mobileOpen ? "Close menu" : "Open menu"}
+                  aria-expanded={mobileOpen}
+                  className="
+                    flex h-10 w-10 items-center justify-center
+                    rounded-md text-white
+                    hover:bg-white/10
                     focus-visible:outline-none
                     focus-visible:ring-2
                     focus-visible:ring-primary
-                    rounded-full
+                    lg:hidden
                   "
-                  aria-label="Clear search"
                 >
-                  <X size={18} />
+                  {mobileOpen ? <X size={27} /> : <Menu size={27} />}
                 </button>
-              )}
+              </div>
             </div>
 
-            {/* Mobile Results */}
-            {searchOpen && search.trim().length >= 2 && (
+            {/* Mobile search */}
+            <div
+              ref={mobileSearchRef}
+              className="relative w-full pb-3 md:hidden"
+            >
               <div
-                className="
-                  absolute left-0 right-0 top-[calc(100%-4px)]
-                  z-[100]
-                  overflow-hidden
-                  rounded-lg
-                  border border-gray-200
-                  bg-white
-                  shadow-xl
-                "
+                className={`
+                  flex items-center rounded-md border bg-white
+                  ${
+                    searchOpen
+                      ? "border-primary"
+                      : "border-transparent"
+                  }
+                `}
               >
-                {loading ? (
-                  <div className="p-2">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="flex items-center gap-3 px-2 py-2.5">
-                        <div className="h-11 w-11 shrink-0 rounded-md bg-gray-100" />
+                <Search
+                  size={19}
+                  className="ml-3.5 shrink-0 text-gray-400"
+                />
 
-                        <div className="flex-1 space-y-2">
-                          <div className="h-3 w-3/4 rounded bg-gray-100" />
-                          <div className="h-2.5 w-1/3 rounded bg-gray-100" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : searchError ? (
-                  <div className="px-5 py-7 text-center text-sm text-gray-500">
-                    Something went wrong
-                  </div>
-                ) : results.length > 0 ? (
-                  <div className="max-h-[360px] overflow-y-auto">
-                    <div
-                      className="
-                        border-b border-gray-100
-                        bg-gray-50
-                        px-3.5 py-2.5
-                        text-[10px] font-semibold uppercase
-                        tracking-[0.12em] text-gray-400
-                      "
-                    >
-                      Search results
-                    </div>
+                <input
+                  type="text"
+                  value={search}
+                  onFocus={() => setSearchOpen(true)}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setSearchOpen(true);
+                  }}
+                  placeholder="Search products..."
+                  aria-label="Search products"
+                  className="
+                    w-full bg-transparent px-3 py-2.5
+                    text-sm text-gray-900 outline-none
+                    placeholder:text-gray-400
+                  "
+                />
 
-                    {results.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/products/${product.slug}`}
-                        onClick={() => {
-                          clearSearch();
-                          setMobileOpen(false);
-                        }}
-                        className="
-                          flex items-center gap-3
-                          border-b border-gray-100
-                          px-3 py-2.5
-                          last:border-0
-                          transition-colors duration-100
-                          hover:bg-gray-50
-                          active:bg-gray-100
-                        "
-                      >
-                        <div
-                          className="
-                            relative flex h-11 w-11 shrink-0
-                            items-center justify-center
-                            overflow-hidden rounded-md
-                            border border-gray-100 bg-gray-50
-                          "
-                        >
-                          {product.image_url ? (
-                            <Image
-                              src={product.image_url}
-                              alt={product.name}
-                              fill
-                              sizes="44px"
-                              className="object-contain p-1"
-                            />
-                          ) : (
-                            <BoltGlyph className="h-5 w-5 text-gray-300" />
-                          )}
-                        </div>
+                {loading && (
+                  <Loader2
+                    size={18}
+                    className="mr-3 animate-spin text-gray-400"
+                  />
+                )}
 
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold leading-5 text-gray-900">
-                            {product.name}
-                          </p>
-
-                          {product.model && (
-                            <p className="mt-0.5 truncate text-[11px] text-gray-500">
-                              Model: {product.model}
-                            </p>
-                          )}
-                        </div>
-
-                        <span
-                          className="shrink-0 pr-1 text-sm text-gray-300"
-                          aria-hidden="true"
-                        >
-                          →
-                        </span>
-                      </Link>
-                    ))}
-
-                    <Link
-                      href={`/products?search=${encodeURIComponent(search)}`}
-                      onClick={() => {
-                        clearSearch();
-                        setMobileOpen(false);
-                      }}
-                      className="
-                        block border-t border-gray-100
-                        bg-amber-50/40
-                        px-4 py-3
-                        text-center text-sm font-semibold
-                        text-amber-600
-                        hover:bg-amber-50
-                      "
-                    >
-                      View all products
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="px-5 py-8 text-center">
-                    <Search size={26} className="mx-auto mb-3 text-gray-300" />
-
-                    <p className="text-sm font-medium text-gray-700">
-                      No products found
-                    </p>
-
-                    <p className="mt-1 text-xs text-gray-400">
-                      Try another product name
-                    </p>
-                  </div>
+                {!loading && search && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    aria-label="Clear search"
+                    className="mr-3 text-gray-400"
+                  >
+                    <X size={18} />
+                  </button>
                 )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
-      {/* Mobile drawer backdrop */}
-      <div
-        aria-hidden={!mobileOpen}
-        onClick={() => setMobileOpen(false)}
+      {/* ================= MOBILE BACKDROP ================= */}
+      <button
+        type="button"
+        aria-label="Close mobile menu"
+        onClick={closeMobileMenu}
         className={`
-          fixed inset-0 z-40
-          bg-black/50
-          transition-opacity duration-200
-          lg:hidden
-          ${mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}
+          fixed inset-0 z-[90] bg-black/60
+          transition-opacity duration-300 lg:hidden
+          ${
+            mobileOpen
+              ? "pointer-events-auto opacity-100"
+              : "pointer-events-none opacity-0"
+          }
         `}
       />
 
-      {/* Mobile drawer */}
-      <div
+      {/* ================= MOBILE DRAWER ================= */}
+      <aside
         ref={mobileMenuRef}
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
         className={`
-          fixed right-0 top-0 z-50
-          h-full w-[78%] max-w-xs
-          bg-secondary
-          shadow-2xl
-          transition-transform duration-200 ease-out
+          fixed right-0 top-0 z-[100]
+          flex h-screen w-[86%] max-w-[360px]
+          flex-col overflow-y-auto
+          bg-secondary text-white shadow-2xl
+          transition-transform duration-300 ease-out
           lg:hidden
-          ${mobileOpen ? "translate-x-0" : "translate-x-full"}
+          ${
+            mobileOpen
+              ? "translate-x-0"
+              : "translate-x-full"
+          }
         `}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <span className="font-bold text-yellow-400">WE PRO</span>
+        {/* Drawer header */}
+        <div
+          className="
+            flex shrink-0 items-center justify-between
+            border-b border-white/10 px-5 py-5
+          "
+        >
+          <div>
+            <div className="text-xl font-bold text-yellow-400">
+              WE PRO
+            </div>
+
+            <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-400">
+              Industrial Products
+            </div>
+          </div>
 
           <button
             type="button"
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobileMenu}
             aria-label="Close menu"
             className="
-              rounded-md
+              flex h-10 w-10 items-center justify-center
+              rounded-md hover:bg-white/10
               focus-visible:outline-none
               focus-visible:ring-2
               focus-visible:ring-primary
             "
           >
-            <X size={26} />
+            <X size={27} />
           </button>
         </div>
 
-        <ul className="flex flex-col px-5 py-4">
-          {[
-            { href: "/", label: "Home" },
-            { href: "/products", label: "Products" },
-            ...NAV_LINKS.slice(1),
-          ].map((link) => (
-            <li key={link.href + link.label} className="border-b border-white/5">
+        {/* Drawer links */}
+        <nav className="flex-1 px-5 py-5">
+          <ul className="flex flex-col">
+            {mobileLinks.map((link) => (
+              <li
+                key={`${link.href}-${link.label}`}
+                className="border-b border-white/10"
+              >
+                <Link
+                  href={link.href}
+                  onClick={closeMobileMenu}
+                  className={`
+                    block rounded-md px-2 py-4
+                    text-base font-semibold
+                    transition-colors
+                    hover:bg-white/10 hover:text-primary
+                    ${
+                      isActive(link.href)
+                        ? "text-primary"
+                        : "text-white"
+                    }
+                  `}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+
+            <li className="pt-6">
               <Link
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
+                href="/#enquiry"
+                onClick={closeMobileMenu}
                 className="
-                  block py-3.5
-                  focus-visible:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-primary
-                  rounded-sm
+                  block rounded-lg bg-primary
+                  px-5 py-3.5 text-center
+                  font-semibold text-black
+                  transition-colors hover:bg-yellow-300
                 "
               >
-                {link.label}
+                Get Quote
               </Link>
             </li>
-          ))}
+          </ul>
+        </nav>
 
-          <li className="pt-5">
-            <Link
-              href="/#enquiry"
-              onClick={() => setMobileOpen(false)}
-              className="
-                block rounded-lg
-                bg-primary
-                px-5 py-3
-                text-center font-semibold text-black
-                transition-colors duration-150
-                hover:bg-yellow-300
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-white
-              "
-            >
-              Get Quote
-            </Link>
-          </li>
-        </ul>
-      </div>
-    </header>
+        {/* Drawer footer */}
+        <div
+          className="
+            shrink-0 border-t border-white/10
+            px-5 py-5 text-center text-xs text-gray-400
+          "
+        >
+          © {new Date().getFullYear()} WE PRO
+        </div>
+      </aside>
+    </>
   );
 }
