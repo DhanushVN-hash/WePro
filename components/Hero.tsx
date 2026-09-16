@@ -4,9 +4,9 @@ import Link from "next/link";
 export default function Hero() {
   return (
     <section className="relative isolate h-[480px] overflow-hidden bg-black sm:h-[520px] lg:h-[565px]">
-      {/* BACKGROUND VIDEO */}
+      {/* DESKTOP VIDEO */}
       <video
-        className="absolute inset-0 -z-20 h-full w-full object-cover"
+        className="absolute inset-0 -z-20 hidden h-full w-full object-cover lg:block"
         autoPlay
         muted
         loop
@@ -18,7 +18,22 @@ export default function Hero() {
           src="/videos/industrial-tools.mp4"
           type="video/mp4"
         />
-        Your browser does not support the video tag.
+      </video>
+
+      {/* MOBILE VIDEO */}
+      <video
+        className="absolute inset-0 -z-20 block h-full w-full object-cover lg:hidden"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      >
+        <source
+          src="/videos/industrial-tools-mobile.mp4"
+          type="video/mp4"
+        />
       </video>
 
       {/* DARK GRADIENT OVERLAY */}
@@ -54,7 +69,6 @@ export default function Hero() {
               className="inline-flex items-center justify-center rounded-lg bg-primary px-7 py-3.5 font-semibold text-black transition-colors duration-300 hover:bg-yellow-400"
             >
               View Products
-              
             </Link>
 
             <Link
