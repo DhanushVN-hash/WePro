@@ -139,30 +139,36 @@ export default function EnquiryForm({
    * Generate a reCAPTCHA v3 token only when submitting.
    */
   const getCaptchaToken = async (): Promise<string | null> => {
-    if (!siteKey || !window.grecaptcha) {
+  if (!siteKey) {
+    console.error("reCAPTCHA site key is missing.");
+    return null;
+  }
+
+  if (!window.grecaptcha) {
+    console.error("reCAPTCHA script has not loaded.");
+    return null;
+  }
+
+  try {
+    await new Promise<void>((resolve) => {
+      window.grecaptcha!.ready(() => resolve());
+    });
+
+    const token = await window.grecaptcha.execute(siteKey, {
+      action: "enquiry_submit",
+    });
+
+    if (!token) {
+      console.error("reCAPTCHA returned an empty token.");
       return null;
     }
 
-    try {
-      return await new Promise<string | null>((resolve) => {
-        window.grecaptcha!.ready(async () => {
-          try {
-            const token = await window.grecaptcha!.execute(siteKey, {
-              action: "enquiry_submit",
-            });
-
-            resolve(token || null);
-          } catch (error) {
-            console.error("reCAPTCHA execution failed:", error);
-            resolve(null);
-          }
-        });
-      });
-    } catch (error) {
-      console.error("reCAPTCHA error:", error);
-      return null;
-    }
-  };
+    return token;
+  } catch (error) {
+    console.error("reCAPTCHA token generation failed:", error);
+    return null;
+  }
+};
 
   /*
    * Client-side validation.
@@ -289,12 +295,12 @@ export default function EnquiryForm({
        */
       const captchaToken = await getCaptchaToken();
 
-      if (siteKey && !captchaToken) {
-        setErrorMessage(
-          "Security verification failed. Please try again."
-        );
-        return;
-      }
+if (siteKey && !captchaToken) {
+  setErrorMessage(
+    "Security verification failed. Please refresh the page and try again."
+  );
+  return;
+}
 
       const firstName = form.firstName.trim();
       const lastName = form.lastName.trim();
