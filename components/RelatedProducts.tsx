@@ -19,6 +19,8 @@ export default async function RelatedProducts({
   return (
     <section className="mt-10 lg:mt-20 w-full max-w-[1000px] mx-auto">
 
+
+
       {/* Heading */}
       <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold mb-4 sm:mb-8 text-[#101820]">
         Related Products

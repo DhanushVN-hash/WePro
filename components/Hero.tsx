@@ -1,9 +1,9 @@
-
 import Link from "next/link";
 
 export default function Hero() {
   return (
     <section className="relative isolate h-[480px] overflow-hidden bg-black sm:h-[520px] lg:h-[565px]">
+
       {/* DESKTOP VIDEO */}
       <video
         className="absolute inset-0 -z-20 hidden h-full w-full object-cover lg:block"
@@ -36,53 +36,73 @@ export default function Hero() {
         />
       </video>
 
-      {/* DARK GRADIENT OVERLAY */}
-      <div className="absolute inset-0 -z-10 bg-black/45" />
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 -z-10 bg-black/35" />
 
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/65 to-black/10" />
+      {/* LEFT SIDE DARK GRADIENT */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/65 to-transparent" />
 
       {/* HERO CONTENT */}
-      <div className="mx-auto flex h-full max-w-7xl items-center px-6 py-20 sm:px-8 lg:px-12">
-        <div className="max-w-3xl text-white">
-          {/* ACCENT LINE */}
-          <div className="mb-6 h-[4px] w-16 bg-primary" />
+      <div className="mx-auto flex h-full max-w-7xl items-center px-6 sm:px-8 lg:px-38">
+        <div className="w-full max-w-3xl text-white">
 
-          {/* HEADING */}
-          <h1 className="mb-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Industrial
-            <br />
-            Pneumatic Tools
+          {/* TOP LABEL */}
+          <h1 className="mb-5 text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-4xl lg:text-[38px]">
+           PNEUMATIC TOOLS · INDUSTRIAL SOLUTIONS
           </h1>
 
-          {/* DESCRIPTION */}
-          <p className="mb-10 max-w-2xl text-base leading-relaxed text-gray-200 sm:text-lg lg:text-xl">
-            Precision. Performance. Reliability.
-            <br className="hidden sm:block" />
-            Premium pneumatic tools and fastening solutions
-            for industrial and professional applications.
+          {/* TAGLINE */}
+          <p className="mb-9 text-xl font-medium text-white sm:text-2xl md:text-[27px]">
+            Powerful. Reliable. Professional.
           </p>
 
-          {/* ACTION BUTTONS */}
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/products"
-              className="inline-flex items-center justify-center rounded-lg bg-primary px-7 py-3.5 font-semibold text-black transition-colors duration-300 hover:bg-yellow-400"
-            >
-              View Products
-            </Link>
+          {/* CTA */}
+          <Link
+            href="/products"
+            className="
+              inline-flex
+              items-center
+              justify-center
+              rounded-full
+              bg-primary
+              px-5
+              py-3
+              text-base
+              font-bold
+              text-black
+              shadow-[0_4px_0_#a16207]
+              transition-all
+              duration-300
+              hover:-translate-y-0.5
+              hover:bg-yellow-400
+              hover:shadow-[0_5px_0_#a16207]
+              active:translate-y-0
+              active:shadow-[0_2px_0_#a16207]
+              sm:px-6
+              sm:py-3.5
+              sm:text-lg
+            "
+          >
+            View Full Product Details
+          </Link>
 
-            <Link
-              href="/#enquiry"
-              className="inline-flex items-center justify-center rounded-lg border border-white/80 px-7 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-white hover:text-black"
-            >
-              Contact Us
-            </Link>
-          </div>
         </div>
       </div>
 
       {/* BOTTOM FADE */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
+      <div
+        className="
+          pointer-events-none
+          absolute
+          bottom-0
+          left-0
+          right-0
+          h-20
+          bg-gradient-to-t
+          from-black/30
+          to-transparent
+        "
+      />
     </section>
   );
-}
+} 

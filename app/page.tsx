@@ -15,7 +15,6 @@ export default function Home() {
   return (
     <>
       <Hero />
-
       <ScrollReveal>
         <Suspense
           fallback={
