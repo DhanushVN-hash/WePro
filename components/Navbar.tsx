@@ -18,7 +18,7 @@ interface SearchProduct {
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-
+  { href: "/#about", label: "About" },
   { href: "/#enquiry", label: "Contact" },
 ];
 
@@ -350,16 +350,15 @@ useEffect(() => {
             ${scrolled ? "shadow-md" : ""}
           `}
         >
-         <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-6">
-        <div
-          className="
-            flex h-[68px]
-            items-center justify-center
-            gap-6
-            sm:h-[72px]
-            lg:gap-8
-          "
-        >
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+            <div
+              className="
+                grid h-[68px]
+                grid-cols-[auto_1fr_auto]
+                items-center gap-4
+                sm:h-[72px] lg:gap-6
+              "
+            >
               {/* Logo */}
               <Link
                 href="/"
@@ -373,11 +372,11 @@ useEffect(() => {
                   sm:w-[170px]
                 "
               >
-                <div className="text-xl font-bold leading-none text-yellow-400 sm:text-1xl">
+                <div className="text-xl font-bold leading-none text-yellow-400 sm:text-2xl">
                   WE PRO
                 </div>
 
-                <div className="mt-1 text-[9px] uppercase tracking-[0.16em] text-gray-300 sm:text-[11px]">
+                <div className="mt-1 text-[9px] uppercase tracking-[0.16em] text-gray-300 sm:text-[10px]">
                   Industrial Products
                 </div>
               </Link>
