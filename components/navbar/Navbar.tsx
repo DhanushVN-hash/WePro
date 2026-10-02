@@ -166,17 +166,6 @@ export default function Navbar() {
        * first 25% of hero.
        */
 
-      if (
-        currentScrollY <= threshold
-      ) {
-
-        setIsNavbarVisible(true);
-
-        lastScrollY.current =
-          currentScrollY;
-
-        return;
-      }
 
 
       /*
@@ -186,21 +175,7 @@ export default function Navbar() {
        * scrolling up   → show
        */
 
-      if (
-        currentScrollY >
-        lastScrollY.current
-      ) {
-
-        setIsNavbarVisible(false);
-
-      } else if (
-        currentScrollY <
-        lastScrollY.current
-      ) {
-
-        setIsNavbarVisible(true);
-      }
-
+lastScrollY.current = currentScrollY;
 
       lastScrollY.current =
         currentScrollY;
@@ -371,24 +346,7 @@ export default function Navbar() {
           MAIN HEADER
       ===================================================== */}
 
-      <header
-        className={`
-          sticky
-          top-0
-          z-[80]
-          text-white
-          transition-transform
-          duration-300
-          ease-in-out
-
-          ${
-            isNavbarVisible ||
-            mobileOpen
-              ? "translate-y-0"
-              : "-translate-y-full"
-          }
-        `}
-      >
+<header className="relative z-[80] text-white">
 
         {/* ===================================================
             ANNOUNCEMENT BAR
