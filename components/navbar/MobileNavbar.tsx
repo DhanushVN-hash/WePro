@@ -91,7 +91,7 @@ export default function MobileNavbar({
           <span
             className="
               mt-1
-              text-[10px]
+              text-[20px]
               uppercase
               tracking-[0.16em]
               text-gray-300
