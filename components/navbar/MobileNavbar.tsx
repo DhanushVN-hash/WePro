@@ -112,7 +112,7 @@ className="
   flex
   w-full
   items-center
-  gap-4
+  gap-10
   pb-4
   relative
   top-0
