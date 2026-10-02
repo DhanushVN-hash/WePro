@@ -6,6 +6,6 @@ export const NAV_LINKS = [
 
 export const MOBILE_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Products", href: "#products" },
+  { label: "Products", href: "/#products" },
   ...NAV_LINKS.slice(1),
 ];
