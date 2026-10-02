@@ -1,7 +1,7 @@
 "use client"; 
 
 import { usePathname } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/navbar/Navbar";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
 export default function SiteChrome() {
