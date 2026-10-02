@@ -123,7 +123,7 @@ className="
 
         <div
           ref={mobileSearchRef}
-          className="min-w-0 flex-1"
+          className="min-w-0 flex-1 mr 4"
         >
           <NavbarSearch
             search={search}
