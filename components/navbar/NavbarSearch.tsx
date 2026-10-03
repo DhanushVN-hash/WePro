@@ -119,7 +119,7 @@ export default function NavbarSearch({
 
           ${
             isMobile
-              ? "h-[72px] cursor-pointer"
+              ? "h-[59px] cursor-pointer"
               : "h-11"
           }
         `}
