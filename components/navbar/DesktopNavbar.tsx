@@ -33,19 +33,17 @@ export default function DesktopNavbar({
         <Link
           href="/"
           aria-current={isActive("/") ? "page" : undefined}
-          className={`
-            rounded-sm text-[15px] font-semibold
-            transition-colors duration-150
-            hover:text-primary
-            focus-visible:outline-none
-            focus-visible:ring-2
-            focus-visible:ring-primary
-            ${
-              isActive("/")
-                ? "text-primary"
-                : "text-white"
-            }
-          `}
+className="
+  rounded-sm
+  text-[15px]
+  font-semibold
+  text-primary
+  transition-colors
+  duration-150
+  hover:text-white
+  focus-visible:outline-none
+  focus-visible:ring-2
+  focus-visible:ring-primary"
         >
           Home
         </Link>
@@ -68,10 +66,11 @@ export default function DesktopNavbar({
             flex items-center gap-1.5
             rounded-sm text-[15px] font-semibold
             transition-colors duration-150
-            hover:text-primary
+            hover:text-white
             focus-visible:outline-none
             focus-visible:ring-2
             focus-visible:ring-primary
+            text-primary
           "
         >
           Products
@@ -102,7 +101,7 @@ export default function DesktopNavbar({
       {navLinks.slice(1).map((link) => (
         <li
           key={link.href}
-          className="flex h-full items-center"
+          className="flex h-full items-center text-primary "
         >
           <Link
             href={link.href}
@@ -113,6 +112,7 @@ export default function DesktopNavbar({
               focus-visible:outline-none
               focus-visible:ring-2
               focus-visible:ring-primary
+            hover:text-white
             "
           >
             {link.label}

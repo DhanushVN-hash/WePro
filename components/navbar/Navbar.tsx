@@ -436,14 +436,15 @@ lastScrollY.current = currentScrollY;
             ================================================= */}
 
             <div
-              className="
-                hidden
-                h-[72px]
-                items-center
-                lg:grid
-                lg:grid-cols-[auto_1fr_auto]
-                lg:gap-8
-              "
+          className="
+            mx-auto
+            hidden
+            h-[66px]
+            items-center
+            justify-center
+            gap-7
+            lg:flex
+          "
             >
 
               {/* DESKTOP LOGO */}
@@ -453,6 +454,7 @@ lastScrollY.current = currentScrollY;
                 onClick={clearSearch}
                 aria-label="WE PRO home"
                 className="
+                  
                   flex
                   shrink-0
                   flex-col
@@ -482,7 +484,7 @@ lastScrollY.current = currentScrollY;
                     text-[9px]
                     uppercase
                     tracking-[0.16em]
-                    text-gray-300
+                    text-grey
                     sm:text-[10px]
                   "
                 >
@@ -494,6 +496,7 @@ lastScrollY.current = currentScrollY;
 
               {/* DESKTOP NAVIGATION */}
 
+            <div className="shrink-0">
               <DesktopNavbar
                 navLinks={NAV_LINKS}
                 productsOpen={productsOpen}
@@ -506,15 +509,16 @@ lastScrollY.current = currentScrollY;
                 }
                 isActive={isActive}
               />
-
+              </div>
 
               {/* DESKTOP RIGHT SIDE */}
 
               <div
                 className="
                   flex
+                  shrink-0
                   items-center
-                  justify-end
+                
                   gap-4
                 "
               >
@@ -544,31 +548,7 @@ lastScrollY.current = currentScrollY;
                 />
 
 
-                {/* GET QUOTE */}
 
-                <Link
-                  href="/#enquiry"
-                  onClick={
-                    clearSearch
-                  }
-                  className="
-                    shrink-0
-                    rounded-md
-                    bg-primary
-                    px-5
-                    py-2.5
-                    text-sm
-                    font-semibold
-                    text-black
-                    transition-colors
-                    hover:bg-yellow-300
-                    focus-visible:outline-none
-                    focus-visible:ring-2
-                    focus-visible:ring-primary
-                  "
-                >
-                  Get Quote
-                </Link>
 
               </div>
 
