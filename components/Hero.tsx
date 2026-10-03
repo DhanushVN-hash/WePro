@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="relative isolate h-[480px] overflow-hidden bg-black sm:h-[520px] lg:h-[565px]">
+    <section className="relative isolate h-[444px] overflow-hidden bg-black sm:h-[520px] lg:h-[565px]">
 
       {/* DESKTOP VIDEO */}
       <video

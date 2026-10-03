@@ -112,8 +112,8 @@ className="
   flex
   w-full
   items-center
-  gap-10
-  pb-4
+  gap-6
+  pb-3
   relative
   top-0
 "
@@ -123,7 +123,7 @@ className="
 
         <div
           ref={mobileSearchRef}
-          className="min-w-0 flex-1 mr-8"
+          className="min-w-0 flex-1 mr-4 ml-12"
         >
           <NavbarSearch
             search={search}
@@ -135,6 +135,7 @@ className="
             searchError={searchError}
             clearSearch={clearSearch}
             variant="mobile"
+            
           />
         </div>
 
@@ -166,6 +167,7 @@ className="
             focus-visible:outline-none
             focus-visible:ring-2
             focus-visible:ring-primary
+            -translate-x-5
           "
         >
           {mobileOpen ? (
